@@ -1,0 +1,4 @@
+model_A,model_B,joint_accuracy_difference_A_minus_B,bootstrap_diff_95_lo,bootstrap_diff_95_hi,A_only_correct,B_only_correct,mcnemar_exact_p,mcnemar_holm_p
+ResNet-18,MobileNetV3-Small,0.01416667,0.00500000,0.02333333,24,7,0.00332689,0.00665379
+ResNet-18,EfficientNet-B0,0.01500000,0.00666667,0.02333333,23,5,0.00091223,0.00273670
+MobileNetV3-Small,EfficientNet-B0,0.00083333,-0.00833333,0.01000000,18,17,1.00000000,1.00000000

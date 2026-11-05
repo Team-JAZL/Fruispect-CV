@@ -1,0 +1,9 @@
+\begin{tabular}{llrrrrrrr}
+\toprule
+model_A & model_B & joint_accuracy_difference_A_minus_B & bootstrap_diff_95_lo & bootstrap_diff_95_hi & A_only_correct & B_only_correct & mcnemar_exact_p & mcnemar_holm_p \\
+\midrule
+ResNet-18 & MobileNetV3-Small & 0.0142 & 0.0050 & 0.0233 & 24 & 7 & 0.0033 & 0.0067 \\
+ResNet-18 & EfficientNet-B0 & 0.0150 & 0.0067 & 0.0233 & 23 & 5 & 0.0009 & 0.0027 \\
+MobileNetV3-Small & EfficientNet-B0 & 0.0008 & -0.0083 & 0.0100 & 18 & 17 & 1.0000 & 1.0000 \\
+\bottomrule
+\end{tabular}

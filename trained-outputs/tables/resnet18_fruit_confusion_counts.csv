@@ -1,0 +1,7 @@
+,Apple,Banana,Guava,Lime,Orange,Pomegranate
+Apple,198,1,0,0,0,1
+Banana,0,200,0,0,0,0
+Guava,0,0,198,2,0,0
+Lime,0,0,0,200,0,0
+Orange,0,0,4,0,196,0
+Pomegranate,2,0,0,0,0,198

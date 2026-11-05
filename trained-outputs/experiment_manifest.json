@@ -1,0 +1,82 @@
+{
+  "project": "Fruispect CCS 250",
+  "dataset_slug": "ryandpark/fruit-quality-classification",
+  "dataset_root": "/kaggle/input/datasets/ryandpark/fruit-quality-classification",
+  "selection_target_per_combination": 1000,
+  "selected_images": 12000,
+  "split_counts": {
+    "train": 9600,
+    "test": 1200,
+    "val": 1200
+  },
+  "configuration": {
+    "dataset_slug": "ryandpark/fruit-quality-classification",
+    "seed": 42,
+    "seeds": [
+      42
+    ],
+    "per_combination": 1000,
+    "image_size": 224,
+    "batch_size": 32,
+    "max_epochs": 50,
+    "patience": 8,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "quality_loss_weight": 1.0,
+    "workers": 2,
+    "hash_distance": 2,
+    "bootstrap_iterations": 1000,
+    "benchmark_single_repeats": 100,
+    "benchmark_batch_repeats": 30,
+    "show_progress": true,
+    "progress_refresh_seconds": 2.0,
+    "progress_min_batches": 10,
+    "notebook_figure_display": true
+  },
+  "preprocessing": {
+    "size": 224,
+    "mode": "RGB_letterbox_gray128",
+    "mean": [
+      0.613960381786709,
+      0.5893228371499974,
+      0.5428700503561701
+    ],
+    "std": [
+      0.23108737294103834,
+      0.23770337010086348,
+      0.26708833246924285
+    ],
+    "fruit_classes": [
+      "Apple",
+      "Banana",
+      "Guava",
+      "Lime",
+      "Orange",
+      "Pomegranate"
+    ],
+    "quality_classes": [
+      "Good",
+      "Bad"
+    ]
+  },
+  "software": {
+    "python": "3.13.16",
+    "platform": "Linux-6.18.55+-x86_64-with-glibc2.39",
+    "torch": "2.11.0+cu130",
+    "torchvision": "0.26.0+cu130",
+    "numpy": "2.1.3",
+    "pandas": "2.3.3",
+    "device": "cuda",
+    "gpu": "Tesla T4"
+  },
+  "checkpoint_selection": "max val joint accuracy; tie-break mean(val fruit macro F1, val quality macro F1)",
+  "deploy_selected_seeds": {
+    "resnet18": 42,
+    "mobilenet_v3_small": 42,
+    "efficientnet_b0": 42
+  },
+  "run_count_per_architecture": 1,
+  "test_used_for_checkpoint_selection": false,
+  "evaluation_scope": "held-out FruitNet test split plus controlled photographic stress tests; no independent camera dataset",
+  "caveat": "No pretrained weights, no food-safety inference, softmax scores uncalibrated."
+}

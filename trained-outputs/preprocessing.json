@@ -1,0 +1,26 @@
+{
+  "size": 224,
+  "mode": "RGB_letterbox_gray128",
+  "mean": [
+    0.613960381786709,
+    0.5893228371499974,
+    0.5428700503561701
+  ],
+  "std": [
+    0.23108737294103834,
+    0.23770337010086348,
+    0.26708833246924285
+  ],
+  "fruit_classes": [
+    "Apple",
+    "Banana",
+    "Guava",
+    "Lime",
+    "Orange",
+    "Pomegranate"
+  ],
+  "quality_classes": [
+    "Good",
+    "Bad"
+  ]
+}

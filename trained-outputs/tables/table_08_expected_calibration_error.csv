@@ -1,0 +1,7 @@
+model,task,ECE_10bins
+ResNet-18,fruit,0.00478235
+MobileNetV3-Small,fruit,0.01203831
+EfficientNet-B0,fruit,0.00865223
+ResNet-18,quality,0.00128652
+MobileNetV3-Small,quality,0.00551918
+EfficientNet-B0,quality,0.00378512

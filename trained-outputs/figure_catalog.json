@@ -1,0 +1,250 @@
+[
+  {
+    "figure": 1,
+    "slug": "dataset_inventory",
+    "title": "FruitNet class inventory after exact-duplicate audit",
+    "note": "Pre-selection image counts. This is not the balanced final dataset.",
+    "png": "figures/fig_01_dataset_inventory.png",
+    "pdf": "figures/fig_01_dataset_inventory.pdf"
+  },
+  {
+    "figure": 2,
+    "slug": "split_allocation",
+    "title": "Balanced fruit-quality sampling and group-aware partitions",
+    "note": "Each whole near-duplicate group belongs to exactly one split; split sizes may deviate slightly from 80/10/10.",
+    "png": "figures/fig_02_split_allocation.png",
+    "pdf": "figures/fig_02_split_allocation.pdf"
+  },
+  {
+    "figure": 3,
+    "slug": "wilson_accuracy_intervals",
+    "title": "Test accuracies with 95% Wilson confidence intervals",
+    "note": "Intervals describe test-image sampling uncertainty, not across-run variability; accuracy cannot exceed 100%.",
+    "png": "figures/fig_03_wilson_accuracy_intervals.png",
+    "pdf": "figures/fig_03_wilson_accuracy_intervals.pdf"
+  },
+  {
+    "figure": 4,
+    "slug": "resnet18_fruit_cm",
+    "title": "ResNet-18 \u2014 six-class fruit confusion matrices (held-out test)",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_04_resnet18_fruit_cm.png",
+    "pdf": "figures/fig_04_resnet18_fruit_cm.pdf"
+  },
+  {
+    "figure": 5,
+    "slug": "resnet18_quality_cm",
+    "title": "ResNet-18 \u2014 Good/Bad confusion matrices (held-out test)",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_05_resnet18_quality_cm.png",
+    "pdf": "figures/fig_05_resnet18_quality_cm.pdf"
+  },
+  {
+    "figure": 6,
+    "slug": "resnet18_joint_cm",
+    "title": "ResNet-18 \u2014 12-combination diagnostic confusion matrix",
+    "note": "Rows: actual fruit-quality pair. Columns: predicted pair. Counts from held-out dataset.",
+    "png": "figures/fig_06_resnet18_joint_cm.png",
+    "pdf": "figures/fig_06_resnet18_joint_cm.pdf"
+  },
+  {
+    "figure": 7,
+    "slug": "mobilenet_v3_small_fruit_cm",
+    "title": "MobileNetV3-Small \u2014 six-class fruit confusion matrices (held-out test)",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_07_mobilenet_v3_small_fruit_cm.png",
+    "pdf": "figures/fig_07_mobilenet_v3_small_fruit_cm.pdf"
+  },
+  {
+    "figure": 8,
+    "slug": "mobilenet_v3_small_quality_cm",
+    "title": "MobileNetV3-Small \u2014 Good/Bad confusion matrices (held-out test)",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_08_mobilenet_v3_small_quality_cm.png",
+    "pdf": "figures/fig_08_mobilenet_v3_small_quality_cm.pdf"
+  },
+  {
+    "figure": 9,
+    "slug": "mobilenet_v3_small_joint_cm",
+    "title": "MobileNetV3-Small \u2014 12-combination diagnostic confusion matrix",
+    "note": "Rows: actual fruit-quality pair. Columns: predicted pair. Counts from held-out dataset.",
+    "png": "figures/fig_09_mobilenet_v3_small_joint_cm.png",
+    "pdf": "figures/fig_09_mobilenet_v3_small_joint_cm.pdf"
+  },
+  {
+    "figure": 10,
+    "slug": "efficientnet_b0_fruit_cm",
+    "title": "EfficientNet-B0 \u2014 six-class fruit confusion matrices (held-out test)",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_10_efficientnet_b0_fruit_cm.png",
+    "pdf": "figures/fig_10_efficientnet_b0_fruit_cm.pdf"
+  },
+  {
+    "figure": 11,
+    "slug": "efficientnet_b0_quality_cm",
+    "title": "EfficientNet-B0 \u2014 Good/Bad confusion matrices (held-out test)",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_11_efficientnet_b0_quality_cm.png",
+    "pdf": "figures/fig_11_efficientnet_b0_quality_cm.pdf"
+  },
+  {
+    "figure": 12,
+    "slug": "efficientnet_b0_joint_cm",
+    "title": "EfficientNet-B0 \u2014 12-combination diagnostic confusion matrix",
+    "note": "Rows: actual fruit-quality pair. Columns: predicted pair. Counts from held-out dataset.",
+    "png": "figures/fig_12_efficientnet_b0_joint_cm.png",
+    "pdf": "figures/fig_12_efficientnet_b0_joint_cm.pdf"
+  },
+  {
+    "figure": 13,
+    "slug": "fruit_class_f1_heatmap",
+    "title": "Fruit class-level F1 by architecture",
+    "note": "Each score is calculated separately from held-out test predictions, not training or validation results.",
+    "png": "figures/fig_13_fruit_class_f1_heatmap.png",
+    "pdf": "figures/fig_13_fruit_class_f1_heatmap.pdf"
+  },
+  {
+    "figure": 14,
+    "slug": "quality_class_f1_heatmap",
+    "title": "Quality class-level F1 by architecture",
+    "note": "Each score is calculated separately from held-out test predictions, not training or validation results.",
+    "png": "figures/fig_14_quality_class_f1_heatmap.png",
+    "pdf": "figures/fig_14_quality_class_f1_heatmap.pdf"
+  },
+  {
+    "figure": 15,
+    "slug": "per_fruit_quality",
+    "title": "Per-fruit Good/Bad accuracy across the three architectures",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_15_per_fruit_quality.png",
+    "pdf": "figures/fig_15_per_fruit_quality.pdf"
+  },
+  {
+    "figure": 16,
+    "slug": "per_fruit_joint_heatmap",
+    "title": "Joint correctness by fruit identity and architecture",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_16_per_fruit_joint_heatmap.png",
+    "pdf": "figures/fig_16_per_fruit_joint_heatmap.pdf"
+  },
+  {
+    "figure": 17,
+    "slug": "joint_error_taxonomy",
+    "title": "Joint classification outcome decomposition",
+    "note": "Each bar totals 100%; fruit-only and quality-only errors are mutually exclusive categories.",
+    "png": "figures/fig_17_joint_error_taxonomy.png",
+    "pdf": "figures/fig_17_joint_error_taxonomy.pdf"
+  },
+  {
+    "figure": 18,
+    "slug": "learning_loss",
+    "title": "Training vs. validation \u00b7 combined cross-entropy loss",
+    "note": "Best epoch = maximum validation joint accuracy, then mean task macro F1; curves are per epoch.",
+    "png": "figures/fig_18_learning_loss.png",
+    "pdf": "figures/fig_18_learning_loss.pdf"
+  },
+  {
+    "figure": 19,
+    "slug": "learning_fruit_loss",
+    "title": "Training vs. validation \u00b7 fruit cross-entropy loss",
+    "note": "Best epoch = maximum validation joint accuracy, then mean task macro F1; curves are per epoch.",
+    "png": "figures/fig_19_learning_fruit_loss.png",
+    "pdf": "figures/fig_19_learning_fruit_loss.pdf"
+  },
+  {
+    "figure": 20,
+    "slug": "learning_quality_loss",
+    "title": "Training vs. validation \u00b7 quality cross-entropy loss",
+    "note": "Best epoch = maximum validation joint accuracy, then mean task macro F1; curves are per epoch.",
+    "png": "figures/fig_20_learning_quality_loss.png",
+    "pdf": "figures/fig_20_learning_quality_loss.pdf"
+  },
+  {
+    "figure": 21,
+    "slug": "learning_joint_accuracy",
+    "title": "Training vs. validation \u00b7 joint accuracy",
+    "note": "Best epoch = maximum validation joint accuracy, then mean task macro F1; curves are per epoch.",
+    "png": "figures/fig_21_learning_joint_accuracy.png",
+    "pdf": "figures/fig_21_learning_joint_accuracy.pdf"
+  },
+  {
+    "figure": 22,
+    "slug": "learning_fruit_accuracy",
+    "title": "Training vs. validation \u00b7 fruit accuracy",
+    "note": "Best epoch = maximum validation joint accuracy, then mean task macro F1; curves are per epoch.",
+    "png": "figures/fig_22_learning_fruit_accuracy.png",
+    "pdf": "figures/fig_22_learning_fruit_accuracy.pdf"
+  },
+  {
+    "figure": 23,
+    "slug": "learning_quality_accuracy",
+    "title": "Training vs. validation \u00b7 quality accuracy",
+    "note": "Best epoch = maximum validation joint accuracy, then mean task macro F1; curves are per epoch.",
+    "png": "figures/fig_23_learning_quality_accuracy.png",
+    "pdf": "figures/fig_23_learning_quality_accuracy.pdf"
+  },
+  {
+    "figure": 24,
+    "slug": "resnet18_training_dashboard",
+    "title": "ResNet-18 \u00b7 training diagnostic dashboard",
+    "note": "Seed 42; selected epoch 42. Losses are independent task objectives.",
+    "png": "figures/fig_24_resnet18_training_dashboard.png",
+    "pdf": "figures/fig_24_resnet18_training_dashboard.pdf"
+  },
+  {
+    "figure": 25,
+    "slug": "mobilenet_v3_small_training_dashboard",
+    "title": "MobileNetV3-Small \u00b7 training diagnostic dashboard",
+    "note": "Seed 42; selected epoch 27. Losses are independent task objectives.",
+    "png": "figures/fig_25_mobilenet_v3_small_training_dashboard.png",
+    "pdf": "figures/fig_25_mobilenet_v3_small_training_dashboard.pdf"
+  },
+  {
+    "figure": 26,
+    "slug": "efficientnet_b0_training_dashboard",
+    "title": "EfficientNet-B0 \u00b7 training diagnostic dashboard",
+    "note": "Seed 42; selected epoch 20. Losses are independent task objectives.",
+    "png": "figures/fig_26_efficientnet_b0_training_dashboard.png",
+    "pdf": "figures/fig_26_efficientnet_b0_training_dashboard.pdf"
+  },
+  {
+    "figure": 27,
+    "slug": "model_performance_panel",
+    "title": "Accuracy, macro precision, recall and F1 by classification task",
+    "note": "Fruit and quality are independent softmax heads. Joint accuracy requires both labels to be correct.",
+    "png": "figures/fig_27_model_performance_panel.png",
+    "pdf": "figures/fig_27_model_performance_panel.pdf"
+  },
+  {
+    "figure": 28,
+    "slug": "model_efficiency_panel",
+    "title": "Architecture-level computational and deployment comparison",
+    "note": "Latency is warmed-up model-only batch-1 forward time; throughput is batch-32 forward time. Same hardware.",
+    "png": "figures/fig_28_model_efficiency_panel.png",
+    "pdf": "figures/fig_28_model_efficiency_panel.pdf"
+  },
+  {
+    "figure": 29,
+    "slug": "paired_joint_accuracy_differences",
+    "title": "Paired joint-accuracy differences with bootstrap 95% intervals",
+    "note": "Exploratory paired bootstrap; McNemar exact p-values and Holm adjustment are reported in the companion table.",
+    "png": "figures/fig_29_paired_joint_accuracy_differences.png",
+    "pdf": "figures/fig_29_paired_joint_accuracy_differences.pdf"
+  },
+  {
+    "figure": 30,
+    "slug": "confidence_reliability",
+    "title": "Confidence reliability by model and classification task",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_30_confidence_reliability.png",
+    "pdf": "figures/fig_30_confidence_reliability.pdf"
+  },
+  {
+    "figure": 31,
+    "slug": "stress_joint",
+    "title": "Controlled stress-test joint accuracy (same held-out images)",
+    "note": "Held-out test unless otherwise stated; values are computed from observed data.",
+    "png": "figures/fig_31_stress_joint.png",
+    "pdf": "figures/fig_31_stress_joint.pdf"
+  }
+]

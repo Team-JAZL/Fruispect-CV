@@ -1,0 +1,4 @@
+architecture,n_runs,joint_accuracy_mean,joint_accuracy_sd,fruit_accuracy_mean,fruit_accuracy_sd,quality_accuracy_mean,quality_accuracy_sd,joint_f1_mean,joint_f1_sd
+efficientnet_b0,1,0.97333333,,0.98250000,,0.98916667,,0.98581922,
+mobilenet_v3_small,1,0.97416667,,0.98333333,,0.99083333,,0.98712884,
+resnet18,1,0.98833333,,0.99166667,,0.99666667,,0.99416549,

@@ -1,0 +1,13 @@
+model,outcome,images,proportion
+ResNet-18,both_correct,1186,0.98833333
+ResNet-18,fruit_only_wrong,10,0.00833333
+ResNet-18,quality_only_wrong,4,0.00333333
+ResNet-18,both_wrong,0,0.00000000
+MobileNetV3-Small,both_correct,1169,0.97416667
+MobileNetV3-Small,fruit_only_wrong,20,0.01666667
+MobileNetV3-Small,quality_only_wrong,11,0.00916667
+MobileNetV3-Small,both_wrong,0,0.00000000
+EfficientNet-B0,both_correct,1168,0.97333333
+EfficientNet-B0,fruit_only_wrong,19,0.01583333
+EfficientNet-B0,quality_only_wrong,11,0.00916667
+EfficientNet-B0,both_wrong,2,0.00166667
