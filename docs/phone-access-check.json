@@ -1,0 +1,17 @@
+{
+  "checked_at": "2026-11-07T16:03:13.535016+00:00",
+  "entrypoint": "main.py",
+  "ngrok_version": "3.39.0",
+  "automatic_https_tunnel": true,
+  "anonymous_api_denied_until_pairing": true,
+  "https_pairing": true,
+  "real_checkpoint_model_results": 9,
+  "fifo_independence": true,
+  "sse_over_https": true,
+  "json_export_over_https": true,
+  "frontend_literal_id_bindings": 69,
+  "static_assets_http_200": 4,
+  "physical_phone_camera_and_visual_browser_check": "Not available in the automation environment.",
+  "owned_web_socket_before_tunnel": true,
+  "graceful_tunnel_and_worker_shutdown": true
+}

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f7f8f2"><title>Fruispect · A fresh look at your fruit</title>
+  <link rel="icon" href="/static/assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/css/app.css"><script type="module" src="/static/js/app.js"></script>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#workspace"><img src="/static/assets/mark.svg" alt="" width="38" height="38"><span>fruispect<span class="brand-dot">.</span></span></a>
+  <nav aria-label="Main navigation"><a class="active" href="#workspace">Scan</a><a href="#queues">Activity</a><a href="#evaluation">Research</a><a href="#settings">Settings</a></nav>
+  <div class="system"><span class="status-dot"></span><span id="system-state">Connecting</span><span id="device" class="chip" title="Processing device">CPU</span></div>
+</header>
+<main>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<section id="workspace" class="view">
+  <div class="page-heading"><div><p class="eyebrow">A LITTLE CARE, A CLEARER PICTURE</p><h1>A fresh look at <span>your fruit.</span></h1><p class="subtitle">Add a photo to check fruit type and visual quality.</p></div><img class="harvest-art" src="/static/assets/harvest.svg" alt="" width="168" height="104"></div>
+  <div class="workspace-grid">
+    <section class="panel intake" aria-labelledby="intake-title">
+      <div class="panel-head"><h2 id="intake-title">Add a photo</h2></div>
+      <div class="segments" aria-label="Input mode"><button data-mode="upload" class="active" aria-pressed="true">Photo</button><button data-mode="batch" aria-pressed="false">Batch</button><button data-mode="camera" aria-pressed="false">Camera</button></div>
+      <div id="upload-mode"><label id="dropzone" class="dropzone" for="files"><span class="upload-symbol" aria-hidden="true">↥</span><strong>Choose a fruit photo</strong><span id="drop-caption">or drop it here</span><small>JPEG, PNG or WebP · {{ max_mb }} MB max</small></label><input id="files" class="sr-only" type="file" accept="image/jpeg,image/png,image/webp"><button id="folder-button" class="text-button" hidden>Choose a folder</button><input id="folder" type="file" webkitdirectory multiple hidden></div>
+      <div id="camera-mode" hidden>
+        <video id="video" autoplay playsinline muted aria-label="Camera preview"></video>
+        <label class="field-label" for="cameras">Camera</label><select id="cameras"><option value="">Default camera</option></select>
+        <div class="button-row camera-actions"><button id="camera-start" class="secondary">Start camera</button><button id="capture" class="primary" disabled>Take photo</button><button id="camera-stop" class="text-button">Stop</button></div>
+        <p id="camera-message" class="muted">Take a photo, review it, then check your fruit.</p>
+        <details class="small-details"><summary>Auto capture</summary><label class="check-label"><input id="sampling" type="checkbox"> Capture every 5 seconds</label><small id="skipped">Pauses when the queues are busy.</small></details>
+        <label class="native-camera-button secondary" for="native-camera">Use phone camera instead</label><input id="native-camera" class="sr-only" type="file" accept="image/*" capture="environment">
+      </div>
+      <div id="selection" hidden><div class="selection-preview"><img id="preview" alt="Selected photograph"><div><strong id="selection-title"></strong><small id="selection-meta"></small></div><button id="clear-files" class="text-button" aria-label="Clear selection">×</button></div><ol id="file-list" class="file-list"></ol><div id="file-pages" class="pagination" hidden><button id="file-previous" class="text-button" aria-label="Previous selected files">←</button><span id="file-page-info"></span><button id="file-next" class="text-button" aria-label="Next selected files">→</button></div></div>
+      <button id="submit" class="primary full" disabled>Check fruit <span aria-hidden="true">↗</span></button><p id="upload-progress" class="muted" aria-live="polite">Choose a photo to get started.</p><button id="rescan" class="text-button" hidden>Check selected photos again</button>
+      <details id="phone-connection" class="phone-share"><summary>Use your phone <span aria-hidden="true">↗</span></summary><div id="phone-details"><p class="muted">Checking phone connection…</p></div></details>
+      <p class="scope-note">One fruit per photo. Visual quality, not food safety.</p>
+    </section>
+  <section id="collection" class="panel batch-section" aria-labelledby="batch-title">
+    <div class="section-heading"><h2 id="batch-title">Your collection <span id="collection-count">0</span></h2><div class="button-row"><select id="batch-history" aria-label="Restore a collection"><option value="">Recent collections</option></select><button id="new-batch" class="secondary">New collection +</button><a id="export-csv" class="secondary" aria-disabled="true">Export CSV ↓</a><details class="collection-more"><summary class="text-button">More</summary><div><a id="export-json" class="text-button" aria-disabled="true">Export JSON</a><button id="cancel-batch" class="text-button">Cancel pending</button><button id="delete-collection" class="text-button danger-text" disabled>Delete collection</button></div></details></div></div>
+    <div id="summary-strip" class="summary-strip"></div>
+    <div class="collection-tools"><input id="search" type="search" placeholder="Find a photo…" aria-label="Search filenames"><select id="sort" aria-label="Sort view"><option value="newest" selected>Newest First</option><option value="oldest">Oldest First</option></select><details class="filter-details"><summary class="secondary">Filters</summary><div class="filters"><select id="status-filter" aria-label="Filter status"><option value="">All statuses</option><option value="QUEUED">Waiting</option><option value="RUNNING">Checking</option><option value="COMPLETED">Has results</option><option value="FAILED">Failed</option><option value="UNAVAILABLE">Unavailable</option><option value="CANCELLED">Cancelled</option><option value="TERMINAL">Finished</option></select><select id="fruit-filter" aria-label="Filter fruit"><option value="">All fruits</option><option>Apple</option><option>Banana</option><option>Guava</option><option>Lime</option><option>Orange</option><option>Pomegranate</option></select><select id="quality-filter" aria-label="Filter quality"><option value="">All qualities</option><option>Good</option><option>Bad</option></select><select id="agreement-filter" aria-label="Filter agreement"><option value="">All comparisons</option><option value="disagreement">Different results</option><option value="agreement">All models agree</option></select></div></details><details class="batch-details"><summary class="text-button">Scan details</summary><dl id="summary-details"></dl></details></div>
+    <div class="table-wrap"><table class="gallery-table"><thead><tr><th>Photo</th><th>ResNet-18</th><th>MobileNetV3-Small</th><th>EfficientNet-B0</th><th>Comparison</th></tr></thead><tbody id="gallery"><tr><td colspan="5" class="table-empty">Your photos will appear here.</td></tr></tbody></table></div>
+    <div class="pagination"><span id="page-info">No photos yet</span><div><button id="previous" class="text-button" disabled>← Previous</button><button id="next" class="text-button" disabled>Next →</button></div></div>
+  </section>
+  </div>
+    <section id="results" class="panel comparison" aria-labelledby="compare-title">
+      <div class="panel-head"><h2 id="compare-title">Your results</h2><span id="connection" class="chip">Live</span></div>
+      <div id="compare-empty" class="empty-comparison"><img src="/static/assets/harvest.svg" alt="" width="200" height="130"><h3>Good things start with a photo.</h3><p>Add a photo or select one from your collection to see its results.</p></div>
+      <div id="compare-content" hidden><div class="selected-heading"><div><p class="eyebrow" id="image-seq"></p><h3 id="image-name"></h3><p id="consensus" class="muted"></p></div><button id="cancel-image" class="text-button">Cancel</button></div><div id="model-panels" class="model-panels"></div><p class="confidence-note">Confidence is a model score, not a guarantee.</p></div>
+      <div class="comparison-footer"><span>Each model works independently.</span><a href="#queues">View activity ↗</a></div>
+    </section>
+</section>
+<section id="queues" class="view" hidden><div class="page-heading"><div><p class="eyebrow">BEHIND EACH PHOTO</p><h1>Scan <span>activity.</span></h1><p class="subtitle">Three models, each moving at its own pace.</p></div></div><div id="queue-lanes"></div><details class="small-details"><summary>About this activity</summary><p class="muted">Every accepted photo keeps its order within each model's queue. Performance uses the last 100 retained completed jobs; throughput includes idle time.</p></details></section>
+<section id="evaluation" class="view" hidden><div class="page-heading"><div><p class="eyebrow">THE RESEARCH</p><h1>Results with <span>roots.</span></h1><p class="subtitle">Recorded test results from the trained models.</p></div></div><div id="evaluation-content"></div><div class="section-heading"><h2>Research figures</h2><select id="figure-select" aria-label="Select research figure"></select></div><figure id="research-figure" class="panel"><figcaption></figcaption><a id="figure-link" target="_blank" rel="noopener"><img id="figure-image" alt="" loading="lazy"></a><p id="figure-note" class="muted"></p></figure></section>
+<section id="settings" class="view" hidden>
+  <div class="page-heading"><div><p class="eyebrow">MAKE ROOM FOR A FRESH START</p><h1>Your <span>settings.</span></h1><p class="subtitle">Manage saved photos, collections and scan activity.</p></div></div>
+  <div class="settings-grid">
+    <section class="panel settings-card" aria-labelledby="storage-title"><h2 id="storage-title">Saved collections</h2><p id="storage-summary" class="muted">Loading saved data...</p><p>Delete collections saved by this browser, including their photos, results and activity. Export anything you want to keep first.</p><div class="button-row"><button id="delete-current" class="secondary" disabled>Delete current collection</button><button id="delete-collections" class="secondary" disabled>Delete my collections</button></div></section>
+    <section class="panel settings-card" aria-labelledby="reset-title"><h2 id="reset-title">Reset all scan data</h2><p id="reset-summary" class="muted"></p><p>Clear every browser's saved collections, photos, results and activity on this server. Pending checks are removed and any running results are discarded. Research and trained models stay available.</p><p id="reset-local-note" class="muted">Available on this computer at localhost.</p><button id="reset-data" class="danger" disabled>Reset all data</button></section>
+    <section class="panel settings-card" aria-labelledby="phone-settings-title"><h2 id="phone-settings-title">Phone connection</h2><p id="tunnel-summary" class="muted">Checking phone link...</p><button id="retry-tunnel" class="secondary" hidden>Retry phone connection</button></section>
+  </div>
+</section>
+
+</main>
+<footer><span>See the Fruit. Know its Quality.</span><span>Fruispect · Grown from research</span></footer>
+<div id="pairing-screen" class="pairing-screen" role="dialog" aria-modal="true" aria-labelledby="pairing-title" hidden><form id="pairing-form" class="panel pairing-card"><img src="/static/assets/mark.svg" alt="" width="48" height="48"><h1 id="pairing-title">Connect to Fruispect</h1><p class="muted">Enter the pairing code shown on your computer.</p><label class="field-label" for="pairing-code">Pairing code</label><input id="pairing-code" type="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="12" required><button class="primary" type="submit">Connect phone ↗</button><p id="pairing-error" role="alert"></p></form></div>
+<dialog id="data-dialog" aria-labelledby="data-dialog-title" aria-describedby="data-dialog-description">
+  <form id="data-form" class="data-dialog-content"><h2 id="data-dialog-title"></h2><p id="data-dialog-description"></p><div id="reset-confirmation" hidden><label class="field-label" for="reset-word">Type RESET to confirm</label><input id="reset-word" autocomplete="off" spellcheck="false"></div><p id="data-error" role="alert"></p><div class="button-row"><button id="data-cancel" type="button" class="secondary" autofocus>Keep my data</button><button id="data-confirm" type="submit" class="danger">Delete</button></div></form>
+</dialog>
+
+</body></html>

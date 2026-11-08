@@ -1,0 +1,46 @@
+{
+  "recorded_at": "2026-11-07T14:24:39.579381+00:00",
+  "device": "cpu",
+  "fixture_scope": "Synthetic image inputs through HTTP and actual saved checkpoints; queue/load evidence only, not accuracy.",
+  "runs": [
+    {
+      "batch_id": "13e8b2b217a4454a8367d0b62c3eb45c",
+      "images": 100,
+      "completed_model_jobs": 300,
+      "duration_s": 93.27016140008345,
+      "fully_processed_images_s": 1.0721542506080677,
+      "model_jobs_s": 3.2164627518242033,
+      "end_to_end_p50_ms": 15805.125713348389,
+      "end_to_end_p95_ms": 77486.72413825989,
+      "summary_request_p95_ms": 91.24820004217327,
+      "peak_worker_rss_bytes": 603426816,
+      "max_observed_lane_queue_depth": 85,
+      "restart": {
+        "model_key": "efficientnet_b0",
+        "terminated_pid": 5436,
+        "replacement_pid": 11640
+      },
+      "independence_evidence": {
+        "advancing_model": "mobilenet_v3_small",
+        "next_image_id": "c35e4a55f8504f50b541a1b16f5cdfa6",
+        "next_start_event_id": 2441,
+        "slower_model": "resnet18",
+        "previous_image_completion_event_id": 2445
+      },
+      "inference_ms": {
+        "resnet18": {
+          "mean": 272.99831799580716,
+          "p95": 773.3227000571787
+        },
+        "mobilenet_v3_small": {
+          "mean": 186.48961399914697,
+          "p95": 824.7893999796361
+        },
+        "efficientnet_b0": {
+          "mean": 338.47780800657347,
+          "p95": 1199.4838000973687
+        }
+      }
+    }
+  ]
+}
