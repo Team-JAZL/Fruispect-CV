@@ -1,4 +1,4 @@
-# Verified Windows / Python 3.14 CPU runtime; exact transitive pins.
+# Verified Windows / Python 3.12 and 3.14 CPU runtimes; exact transitive pins.
 -r requirements.txt
 blinker==1.9.0
 click==8.3.1

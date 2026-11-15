@@ -1,5 +1,13 @@
 # Architecture and API
 
+## Connected frontend
+
+The root Flask route renders `app/templates/fruispect.html` in live mode, with preview overrides disabled and configured file/pixel/batch limits and retention injected as meta tags. `/static/fruispect/<filename>` safely serves the editable `frontend/assets/` tree. Modules and API calls share the Flask origin, preserving cookies, origin checks, and the existing CSP without inline-script/style allowances.
+
+`frontend/assets/api/live.js` handles admission, snapshots, commands, exports, and SSE/polling. User scanning/collections and the Operator console use actual API data. Operator research matches the saved CSV's model display names to stable model keys. Full cross-browser Admin request APIs are still unimplemented; the interface reports that limitation.
+
+The root repository `index.html` remains an explicitly labeled, standalone offline design preview. `python -m scripts.build_frontend` rebuilds that preview from the maintained `frontend/` source and does not overwrite live assets. Use `main.py`/`start.ps1` and port 5000 for real inference. The optional `frontend/preview.py` server on port 8080 is for fixture previews only.
+
 `main.py` holds an OS lock and supervises a Waitress web process plus three spawned model workers. Each worker loads one checkpoint once, runs a smoke test, renews a lane lease, and performs one forward pass at a time. SQLite WAL has a busy timeout, foreign keys, and short `BEGIN IMMEDIATE` transactions. Transforms/inference occur outside transactions.
 
 ## Optional phone access
