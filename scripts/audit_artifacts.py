@@ -1,4 +1,4 @@
-"""Strict checkpoint smoke tests and parity against the preserved research helper."""
+# Audit checkpoint loading and numerical parity with the research helper.
 import argparse
 import hashlib
 import json
@@ -9,11 +9,12 @@ import numpy as np
 import torch
 from PIL import Image
 from app.config import MODELS, Settings
-from app.core.model_adapter import ModelAdapter, reference_module
-from app.core.preprocessing import canonical_pixels, metadata, tensor_from_pixels
+from app.inference.adapter import ModelAdapter, reference_module
+from app.inference.preprocessing import canonical_pixels, metadata, tensor_from_pixels
 from app.storage.database import iso
 
 
+# Verify current artifact hashes, checkpoint loading, and reference numerical parity.
 def audit(cfg):
     report = {'audited_at': iso(), 'host': platform.platform(), 'models': [], 'missing': [],
               'fixtures': 'Deterministic RGB, RGBA, grayscale, small images; no labeled photo accuracy claimed.',
@@ -65,6 +66,7 @@ def audit(cfg):
     return report
 
 
+# Run the audit artifacts command with configured arguments.
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--output', type=Path)

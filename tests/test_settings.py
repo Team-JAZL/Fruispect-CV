@@ -1,13 +1,15 @@
+# Verify settings behavior.
 from pathlib import Path
 
-from app.core.cleanup import drain_deletions
-from app.core.queue_coordinator import Coordinator
+from app.services.cleanup import drain_deletions
+from app.queue.coordinator import Coordinator
 from conftest import batch, upload, ready, result
 from test_tunnel import install_state
 
 HEADERS = {'X-Fruispect': '1'}
 
 
+# Verify newest default and explicit oldest.
 def test_newest_default_and_explicit_oldest(client):
     ident = batch(client)
     accepted = upload(client, ident, 3).get_json()['accepted']
@@ -16,6 +18,7 @@ def test_newest_default_and_explicit_oldest(client):
     assert [r['image_id'] for r in client.get(path + '?sort=oldest').get_json()['images']] == [r['image_id'] for r in accepted]
 
 
+# Verify delete current removes files and activity without resurrecting running job.
 def test_delete_current_removes_files_and_activity_without_resurrecting_running_job(client, database, cfg):
     ident, retained = batch(client), batch(client)
     photo = upload(client, ident).get_json()['accepted'][0]['image_id']
@@ -38,6 +41,7 @@ def test_delete_current_removes_files_and_activity_without_resurrecting_running_
     assert upload(client, retained).status_code == 202
 
 
+# Verify delete browser collections obeys ownership.
 def test_delete_browser_collections_obeys_ownership(client, app, database):
     mine = batch(client)
     other = app.test_client()
@@ -49,6 +53,7 @@ def test_delete_browser_collections_obeys_ownership(client, app, database):
     assert other.get(f'/api/batches/{theirs}').status_code == 200
 
 
+# Verify full reset all browsers and orphans preserves models and connection.
 def test_full_reset_all_browsers_and_orphans_preserves_models_and_connection(client, app, database, cfg):
     upload(client, batch(client))
     other = app.test_client()
@@ -71,6 +76,7 @@ def test_full_reset_all_browsers_and_orphans_preserves_models_and_connection(cli
     assert fresh.get_json()['accepted'][0]['admission_seq'] == 1
 
 
+# Verify phone cannot reset server data or retry tunnel.
 def test_phone_cannot_reset_server_data_or_retry_tunnel(client, app, database):
     install_state(database)
     phone = app.test_client()
@@ -81,6 +87,7 @@ def test_phone_cannot_reset_server_data_or_retry_tunnel(client, app, database):
         assert phone.post(path, base_url=base, headers=HEADERS, json={'confirmation': 'RESET'}).status_code == 403
 
 
+# Verify delete during upload returns conflict and releases slots.
 def test_delete_during_upload_returns_conflict_and_releases_slots(client, app):
     ident = batch(client)
     gate = app.extensions['uploads']
@@ -94,6 +101,7 @@ def test_delete_during_upload_returns_conflict_and_releases_slots(client, app):
     assert client.post(f'/api/batches/{ident}/delete', headers=HEADERS).status_code == 200
 
 
+# Verify locked file cleanup retries and refuses outside spool.
 def test_locked_file_cleanup_retries_and_refuses_outside_spool(database, cfg, monkeypatch):
     cfg.spool.mkdir()
     locked = cfg.spool / 'locked.png'
@@ -103,6 +111,7 @@ def test_locked_file_cleanup_retries_and_refuses_outside_spool(database, cfg, mo
     with database.connect(write=True) as db:
         db.executemany('INSERT INTO file_deletions VALUES(?)', [(str(locked),), (str(outside),)])
     unlink = Path.unlink
+    # Guarded.
     def guarded(path, **kwargs):
         if path == locked:
             raise PermissionError('worker has input open')
@@ -115,6 +124,7 @@ def test_locked_file_cleanup_retries_and_refuses_outside_spool(database, cfg, mo
     assert not locked.exists()
 
 
+# Verify deleted collection closes existing event stream.
 def test_deleted_collection_closes_existing_event_stream(client):
     ident = batch(client)
     response = client.get(f'/api/events?batch_id={ident}', buffered=False)

@@ -1,13 +1,15 @@
+# Verify api behavior.
 import csv
 import io
 from dataclasses import replace
 import pytest
 from app import create_app
-from app.core.cleanup import maintain
-from app.core.queue_coordinator import Coordinator
+from app.services.cleanup import maintain
+from app.queue.coordinator import Coordinator
 from conftest import batch, upload, png, ready, result
 
 
+# Verify batch integrity and replay.
 @pytest.mark.parametrize('count',[1,10,50,100])
 def test_batch_integrity_and_replay(client,database,cfg,count):
     b=batch(client)
@@ -31,6 +33,7 @@ def test_batch_integrity_and_replay(client,database,cfg,count):
     assert all(e['event_id']>events['cursor'] for e in next_events)
 
 
+# Verify invalid partial idempotency and path.
 def test_invalid_partial_idempotency_and_path(client,database):
     b=batch(client)
     response=client.post(f'/api/batches/{b}/images',headers={'X-Fruispect':'1','Idempotency-Key':'mixed'},data={'images':[(io.BytesIO(png()),'../../fruit.png'),(io.BytesIO(b'garbage'),'fake.jpg')]})
@@ -45,6 +48,7 @@ def test_invalid_partial_idempotency_and_path(client,database):
     assert empty.status_code==422
 
 
+# Verify backpressure and storage.
 def test_backpressure_and_storage(client,database,cfg):
     small=create_app(replace(cfg,max_queue=1))
     c=small.test_client();b=batch(c)
@@ -58,17 +62,19 @@ def test_backpressure_and_storage(client,database,cfg):
     assert upload(c2,b2).status_code==503
 
 
+# Verify idempotent replay when spool capacity exhausted.
 def test_idempotent_replay_when_spool_capacity_exhausted(client,database,cfg):
     b=batch(client)
     first=upload(client,b,key='capacity-replay').get_json()['accepted'][0]
     limited=create_app(replace(cfg,max_spool_bytes=1)).test_client()
-    # Preserve the exact authenticated browser session for this independent app instance.
+
     limited.set_cookie('session',client.get_cookie('session').value)
     replay=upload(limited,b,key='capacity-replay')
     assert replay.status_code==202 and replay.get_json()['accepted'][0]['image_id']==first['image_id']
     assert upload(limited,b).status_code==503
 
 
+# Verify byte pixel animation and decode limits.
 def test_byte_pixel_animation_and_decode_limits(cfg):
     a=create_app(replace(cfg,max_file_bytes=50));c=a.test_client();b=batch(c)
     assert upload(c,b).status_code==413
@@ -79,6 +85,7 @@ def test_byte_pixel_animation_and_decode_limits(cfg):
     assert upload(c,b,contents=animated.getvalue()).status_code==422
 
 
+# Verify session csrf and origin.
 def test_session_csrf_and_origin(client,app):
     assert client.post('/api/batches').status_code==403
     assert client.post('/api/batches',headers={'X-Fruispect':'1','Origin':'https://evil.invalid'}).status_code==403
@@ -87,6 +94,7 @@ def test_session_csrf_and_origin(client,app):
     assert app.test_client().get(f'/api/batches/{b}').status_code==404
 
 
+# Verify batch idempotency and export.
 def test_batch_idempotency_and_export(client,database,cfg):
     first=client.post('/api/batches',headers={'X-Fruispect':'1','Idempotency-Key':'create'}).get_json()['batch']['batch_id']
     second=client.post('/api/batches',headers={'X-Fruispect':'1','Idempotency-Key':'create'}).get_json()['batch']['batch_id']
@@ -106,6 +114,7 @@ def test_batch_idempotency_and_export(client,database,cfg):
     response.close()
 
 
+# Verify cleanup preserves active and recovers interrupted.
 def test_cleanup_preserves_active_and_recovers_interrupted(client,database,cfg):
     b=batch(client);upload(client,b)
     with database.connect(write=True) as db:db.execute('UPDATE images SET retention_expires_at=0');db.execute('UPDATE batches SET created_at=0')
@@ -117,6 +126,7 @@ def test_cleanup_preserves_active_and_recovers_interrupted(client,database,cfg):
     with database.connect() as db:assert db.execute('SELECT count(*) FROM images').fetchone()[0]==0
 
 
+# Verify missing research and model readiness.
 def test_missing_research_and_model_readiness(client,cfg):
     assert client.get('/api/readiness').status_code==503
     assert len(client.get('/api/queues').get_json()['lanes'])==3

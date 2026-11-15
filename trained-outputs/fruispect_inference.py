@@ -1,4 +1,4 @@
-# Fruispect inference-only helper. No Flask or frontend dependency.
+# Define the research model architectures and reference image inference.
 from pathlib import Path
 import torch
 from torch import nn
@@ -6,6 +6,7 @@ from torchvision import models, transforms as T
 from PIL import Image, ImageOps
 
 class MultiTaskFruitCNN(nn.Module):
+    # Initialize the component and its required dependencies.
     def __init__(self,architecture):
         super().__init__()
         if architecture=='resnet18':
@@ -24,12 +25,14 @@ class MultiTaskFruitCNN(nn.Module):
             raise ValueError(f'Unsupported architecture: {architecture}')
         self.fruit_head=nn.Linear(nf,6)
         self.quality_head=nn.Linear(nf,2)
+    # Compute independent fruit and quality logits from shared backbone features.
     def forward(self,image):
         features=self.backbone(image)
         return self.fruit_head(features),self.quality_head(features)
 
+# Load a reference architecture and its strict checkpoint weights once.
 def load_fruispect_model(checkpoint_path,device='cpu'):
-    # Call once at server startup; do not reload the checkpoint for every request.
+
     device=torch.device(device)
     checkpoint=torch.load(Path(checkpoint_path),map_location='cpu',weights_only=True)
     assert checkpoint['format_version']==1
@@ -37,8 +40,9 @@ def load_fruispect_model(checkpoint_path,device='cpu'):
     model.load_state_dict(checkpoint['state_dict'],strict=True)
     return model.to(device).eval(),checkpoint['preprocessing'],device
 
+# Apply the recorded image transform and return reference head probabilities.
 def predict_fruispect_image(model,metadata,device,image):
-    # image may be a PIL.Image.Image or an image path.
+
     if not isinstance(image,Image.Image):
         with Image.open(image) as file_image:
             image=file_image.copy()

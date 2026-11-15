@@ -1,3 +1,4 @@
+// Share accessible icons, safe markup, formatting, downloads, and focus handling.
 const glyphs = {
   scan: '<path d="M8 3H5a2 2 0 0 0-2 2v3m13-5h3a2 2 0 0 1 2 2v3m0 8v3a2 2 0 0 1-2 2h-3m-8 0H5a2 2 0 0 1-2-2v-3M7 12h10"/>',
   photo: '<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m3 17 5-5 4 4 4-5 5 6"/>',
@@ -28,40 +29,46 @@ const glyphs = {
   refresh: '<path d="M20 7v5h-5M4 17v-5h5"/><path d="M6 8a7 7 0 0 1 12-2l2 3M4 15l2 3a7 7 0 0 0 12-2"/>',
 };
 
+// Render a local SVG glyph with an accessible decorative wrapper.
 export function icon(name, size = 20) {
   return `<svg aria-hidden="true" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${glyphs[name] ?? glyphs.info}</svg>`;
 }
 
+// Escape user-visible values before inserting HTML markup.
 export function escapeHtml(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
-  })[char]);
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      })[char]);
 }
 
+// Allow same-origin photos and locally generated image previews.
 export function photoUrl(value) {
   if (!value) return '';
   if (typeof value === 'string' && /^data:image\/(?:jpeg|png|webp);base64,/i.test(value)) return value;
   try {
     const parsed = new URL(value, location.href);
     return parsed.origin === location.origin || parsed.protocol === 'blob:' && parsed.origin === location.origin
-      ? parsed.href : '';
+    ? parsed.href : '';
   } catch { return ''; }
 }
 
+// Format a known timestamp or label an unavailable date explicitly.
 export function formatDate(value) {
   if (value == null || value === '') return 'Not available';
   const parsed = new Date(typeof value === 'number' ? value * 1000 : value);
   return Number.isNaN(parsed.getTime()) ? 'Not available' : new Intl.DateTimeFormat(undefined, {
-    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-  }).format(parsed);
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    }).format(parsed);
 }
 
+// Format a finite confidence value as a percentage.
 export function formatScore(value) {
   return typeof value === 'number' && Number.isFinite(value)
-    ? new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 1 }).format(value)
-    : 'Not available';
+  ? new Intl.NumberFormat(undefined, { style: 'percent', maximumFractionDigits: 1 }).format(value)
+  : 'Not available';
 }
 
+// Download a supplied file and release its temporary object URL.
 export function saveDownload({ blob, filename }) {
   const url = URL.createObjectURL(blob);
   const link = Object.assign(document.createElement('a'), { href: url, download: filename });
@@ -71,6 +78,7 @@ export function saveDownload({ blob, filename }) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+// Refresh markup while retaining focused controls and open details.
 export function preserveFocus(container, markup) {
   if (container.innerHTML === markup) return;
   const active = document.activeElement;

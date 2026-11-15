@@ -1,0 +1,33 @@
+/* Style workspace collections elements and layout. */
+.collections-grid { display: grid; grid-template-columns: minmax(190px, .75fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+.collection-sidebar, .collection-content { padding: 17px; }
+.collection-header { justify-content: space-between; align-items: flex-start; }
+.collection-actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.collection-actions .icon-button { width: 33px; min-height: 33px; }
+.batch-choice { display: flex; width: 100%; align-items: center; gap: 7px; text-align: left; border: 1px solid #ebf0e9; padding: 7px; border-radius: 7px; background: #fafcfa; margin-bottom: 5px; }
+.batch-choice span:nth-child(2) { flex: 1; }
+.batch-choice strong, .batch-choice small { display: block; font-size: 11px; }
+.batch-choice small { color: var(--muted); }
+.batch-choice:hover, .batch-choice.chosen { background: #ecf5e9; border-color: #d6e7d2; }
+.retention-note { margin: 11px 0 4px; color: var(--muted); font-size: 11px; }
+.collection-progress progress { width: 100%; height: 8px; accent-color: #40845c; margin: 0 0 6px; }
+#collection-filter { display: flex; flex-wrap: wrap; gap: 5px; padding-bottom: 9px; align-items: center; font-size: 12px; }
+.filter-search { display: flex; align-items: center; gap: 4px; flex: 1; min-width: 130px; }
+.filter-search input { width: 100%; }
+.filters { flex: 0 0 auto; }
+.filters[open] { flex-basis: 100%; }
+.filters summary { color: var(--green); cursor: pointer; }
+.filters > div { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 6px; margin-top: 6px; }
+.filters label { display: grid; gap: 3px; color: var(--muted); }
+.collection-thumb { width: 41px; height: 41px; }
+.collection-row .button { white-space: nowrap; }
+.pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--muted); }
+.page-footer { display: flex; justify-content: space-between; gap: 7px; color: var(--muted); font-size: 10px; padding: 9px clamp(18px,3vw,44px) 15px; }
+dialog { width: min(calc(100% - 24px),430px); color: var(--ink); border: 1px solid var(--line); border-radius: 15px; padding: 20px; box-shadow: 0 15px 60px #20392e38; }
+dialog::backdrop { background: #17332687; }
+dialog h2 { font-size: 21px; letter-spacing: -.035em; }
+dialog p { font-size: 13px; color: var(--muted); margin-top: 6px; }
+#confirm-input-label { display: grid; gap: 4px; margin-top: 12px; font-size: 12px; }
+.dialog-actions { margin-top: 15px; display: flex; justify-content: flex-end; gap: 6px; }
+.toast { position: fixed; bottom: 18px; right: 18px; z-index: 10; max-width: min(420px,calc(100% - 36px)); padding: 10px 14px; border-radius: 8px; background: #214d38; color: #fff; font-size: 13px; box-shadow: 0 5px 20px #28403243; }
+.toast.toast-error { background: #8a3330; }

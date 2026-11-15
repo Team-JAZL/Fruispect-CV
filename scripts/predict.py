@@ -1,13 +1,14 @@
-"""Developer-facing real checkpoint inference: python -m scripts.predict image.jpg."""
+# Run real checkpoint predictions for a supplied image from the command line.
 import argparse
 import json
 import tempfile
 from pathlib import Path
 from app.config import Settings, MODELS
-from app.core.model_adapter import ModelAdapter
-from app.core.preprocessing import decode, metadata, canonical_pixels
+from app.inference.adapter import ModelAdapter
+from app.inference.preprocessing import decode, metadata, canonical_pixels
 
 
+# Run the predict command with configured arguments.
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('image', type=Path)

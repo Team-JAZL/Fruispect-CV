@@ -1,13 +1,14 @@
-import json
+# Verify queues behavior.
 import threading
 import time
 from dataclasses import replace
 from app.config import MODELS
-from app.core.queue_coordinator import Coordinator
-from app.storage.database import transition
+from app.queue.coordinator import Coordinator
+from app.storage.jobs import transition
 from conftest import batch, upload, ready, result
 
 
+# Verify fifo independent progress.
 def test_fifo_independent_progress(client, database, cfg):
     b = batch(client)
     ids = upload(client,b,3).get_json()['accepted']
@@ -16,6 +17,7 @@ def test_fifo_independent_progress(client, database, cfg):
     ends = {k:[] for k in MODELS}
     trace = []
     lock = threading.Lock()
+    # Lane.
     def lane(key, delay):
         ready(q,key,key)
         for _ in ids:
@@ -38,6 +40,7 @@ def test_fifo_independent_progress(client, database, cfg):
         assert db.execute("SELECT count(*) FROM events WHERE event_type='model.completed'").fetchone()[0]==9
 
 
+# Verify waiting input and retry head cannot be overtaken.
 def test_waiting_input_and_retry_head_cannot_be_overtaken(client,database,cfg):
     b=batch(client);upload(client,b,3)
     q=Coordinator(database,cfg);ready(q,'resnet18','one')
@@ -52,6 +55,7 @@ def test_waiting_input_and_retry_head_cannot_be_overtaken(client,database,cfg):
     assert q.claim('resnet18','one')['job_id']==first['job_id']
 
 
+# Verify recovery fences old worker and retries oldest.
 def test_recovery_fences_old_worker_and_retries_oldest(client,database,cfg):
     b=batch(client);upload(client,b,2)
     q=Coordinator(database,cfg);ready(q,'resnet18','old')
@@ -67,6 +71,7 @@ def test_recovery_fences_old_worker_and_retries_oldest(client,database,cfg):
     assert q.claim('resnet18','new')['admission_seq']>first['admission_seq']
 
 
+# Verify retry budget and unavailable lane.
 def test_retry_budget_and_unavailable_lane(client,database,cfg):
     b=batch(client);upload(client,b,2)
     q=Coordinator(database,replace(cfg,max_attempts=1));ready(q,'resnet18','r');ready(q,'efficientnet_b0','e')
@@ -79,6 +84,7 @@ def test_retry_budget_and_unavailable_lane(client,database,cfg):
         assert db.execute("SELECT status FROM model_jobs WHERE model_key='efficientnet_b0' ORDER BY admission_seq LIMIT 1").fetchone()[0]=='UNAVAILABLE'
 
 
+# Verify running cancellation discards result and completed survives.
 def test_running_cancellation_discards_result_and_completed_survives(client,database,cfg):
     b=batch(client);ids=upload(client,b,2).get_json()['accepted']
     q=Coordinator(database,cfg);ready(q,'resnet18','r');job=q.claim('resnet18','r')
@@ -90,6 +96,7 @@ def test_running_cancellation_discards_result_and_completed_survives(client,data
         assert db.execute('SELECT status FROM model_jobs WHERE job_id=?',(next_job['job_id'],)).fetchone()[0]=='COMPLETED'
 
 
+# Verify transition rejects terminal mutation.
 def test_transition_rejects_terminal_mutation(client,database,cfg):
     b=batch(client);upload(client,b)
     q=Coordinator(database,cfg);q.cancel(batch_id=b)

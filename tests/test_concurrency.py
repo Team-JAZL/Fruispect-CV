@@ -1,16 +1,18 @@
+# Verify concurrency behavior.
 import io
 import threading
 from dataclasses import replace
-from app.core.ingestion import ingest
-from app.core.queue_coordinator import Coordinator
-from app.core.preprocessing import decode
+from app.services.ingestion import ingest
+from app.queue.coordinator import Coordinator
 from werkzeug.datastructures import FileStorage
-from conftest import batch, upload, ready, png, result
+from conftest import batch, upload, ready, png
 
 
+# Verify two sessions concurrent admission atomic fanout.
 def test_two_sessions_concurrent_admission_atomic_fanout(app,database,cfg):
     one=app.test_client();two=app.test_client();batches=[batch(one),batch(two)]
     errors=[]
+    # Admit a bounded image chunk and report individual rejections.
     def submit(client,b):
         try:
             for offset in range(0,10,2):
@@ -27,8 +29,10 @@ def test_two_sessions_concurrent_admission_atomic_fanout(app,database,cfg):
         assert db.execute('SELECT count(DISTINCT admission_seq) FROM images').fetchone()[0]==20
 
 
+# Verify concurrent duplicate submission has single image.
 def test_concurrent_duplicate_submission_has_single_image(client,database,cfg):
     b=batch(client);out=[];errors=[]
+    # Admit a bounded image chunk and report individual rejections.
     def submit():
         try:out.append(ingest(database,cfg,b,'same-request',0,FileStorage(stream=io.BytesIO(png()),filename='fruit.png')))
         except Exception as exc:errors.append(exc)
@@ -41,6 +45,7 @@ def test_concurrent_duplicate_submission_has_single_image(client,database,cfg):
         assert db.execute('SELECT count(*) FROM model_jobs').fetchone()[0]==3
 
 
+# Verify upload slot backpressure.
 def test_upload_slot_backpressure(app,client):
     b=batch(client);gate=app.extensions['uploads']
     for _ in range(app.extensions['settings'].upload_slots):assert gate.acquire(False)
@@ -49,6 +54,7 @@ def test_upload_slot_backpressure(app,client):
         for _ in range(app.extensions['settings'].upload_slots):gate.release()
 
 
+# Verify lane lease heartbeat and crash exhaustion.
 def test_lane_lease_heartbeat_and_crash_exhaustion(client,database,cfg):
     b=batch(client);upload(client,b,2)
     q=Coordinator(database,replace(cfg,max_attempts=1));ready(q,'resnet18','a')
@@ -61,6 +67,7 @@ def test_lane_lease_heartbeat_and_crash_exhaustion(client,database,cfg):
     with database.connect() as db:assert db.execute('SELECT status FROM model_jobs WHERE job_id=?',(job['job_id'],)).fetchone()[0]=='FAILED'
 
 
+# Verify shutdown and missing preprocessing are explicit.
 def test_shutdown_and_missing_preprocessing_are_explicit(client,database,cfg):
     b=batch(client)
     with database.connect(write=True) as db:db.execute("INSERT OR REPLACE INTO service_state VALUES('accepting','0')")

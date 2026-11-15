@@ -1,0 +1,67 @@
+/* Style workspace base elements and layout. */
+:root {
+  color-scheme: light;
+  --ink: #183426;
+  --muted: #52665b;
+  --line: #dce6dc;
+  --green: #17664b;
+  --green-dark: #164d3a;
+  --paper: #fff;
+  --wash: #f5f8f3;
+  --accent: #d9ebd7;
+  --bad: #a13a38;
+  --warn: #795214;
+  --shadow: 0 2px 6px #20392808;
+  font-family: Inter, "DM Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 15px;
+  background: var(--wash);
+  color: var(--ink);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: default; opacity: .52; }
+button, input, select, summary, a { -webkit-tap-highlight-color: #d7ebd8; }
+:focus-visible { outline: 3px solid #5c9a70; outline-offset: 3px; }
+main:focus { outline: none; }
+h1, h2, h3, p { margin: 0; }
+p { line-height: 1.55; }
+svg { flex: none; vertical-align: middle; }
+a { color: var(--green); }
+button { color: inherit; }
+img { max-width: 100%; display: block; }
+.sr-only, .skip:not(:focus) { position: absolute; clip-path: inset(50%); width: 1px; height: 1px; padding: 0; overflow: hidden; white-space: nowrap; }
+.skip:focus { position: fixed; z-index: 10; left: 12px; top: 12px; background: white; padding: 12px; }
+.startup { margin: 5rem auto; text-align: center; }
+.shell { min-height: 100vh; display: grid; grid-template-columns: 228px minmax(0,1fr); }
+.sidebar { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; padding: 26px 18px 18px; background: #fff; border-right: 1px solid var(--line); z-index: 3; }
+.brand { appearance: none; text-align: left; background: transparent; border: 0; display: flex; align-items: center; gap: 11px; padding: 0; margin: 0 0 48px 4px; }
+.brand strong { display: block; font-size: 26px; font-weight: 820; letter-spacing: -.08em; line-height: .95; }
+.brand-dot { color: #438557; }
+.brand small { display: block; margin-top: 7px; color: var(--muted); font-size: 8px; letter-spacing: .125em; font-weight: 720; }
+.nav-group + .nav-group { margin-top: 31px; }
+.nav-group > p { padding-left: 11px; margin-bottom: 8px; color: #5c6c62; font-size: 10px; font-weight: 760; letter-spacing: .125em; }
+.nav-item { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 43px; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; color: var(--muted); font-size: 13px; font-weight: 620; background: transparent; text-align: left; }
+.nav-item + .nav-item { margin-top: 4px; }
+.nav-item span { flex: 1; }
+.nav-item:hover { background: #f3f8f1; }
+.nav-item[aria-current=page] { background: #eaf4e8; color: #1e5d41; border-color: #daebd7; font-weight: 750; }
+.sidebar-foot { margin-top: auto; }
+.session-card { display: flex; align-items: center; gap: 9px; padding: 11px; background: #f5f8f3; border: 1px solid #e8eee6; border-radius: 11px; }
+.session-card strong, .session-card small { display: block; font-size: 12px; line-height: 1.4; }
+.session-card small { color: var(--muted); font-size: 11px; }
+.session-icon { width: 34px; height: 34px; display: grid; place-items: center; background: #e5f0e0; color: var(--green); border-radius: 8px; }
+.sidebar-foot > p { color: var(--muted); font-size: 10px; margin: 13px 0 0 3px; }
+.shell-main { min-width: 0; display: flex; flex-direction: column; }
+.topbar { min-height: 67px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px clamp(18px,3vw,44px); background: #fff; border-bottom: 1px solid var(--line); }
+.breadcrumb, .top-actions { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.breadcrumb { color: var(--muted); font-size: 13px; }
+.breadcrumb strong { color: var(--ink); font-weight: 670; }
+.mobile-menu { display: none !important; }
+.badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+select, input:not([type=checkbox]):not([type=file]) { min-height: 36px; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); padding: 6px 9px; }
+select { cursor: pointer; }
+.main-content { width: 100%; max-width: 1550px; margin: 0 auto; padding: 25px clamp(18px,3vw,44px) 30px; flex: 1; }
+#connection-panel:not(:empty) { margin-bottom: 14px; }

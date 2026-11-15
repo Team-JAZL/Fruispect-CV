@@ -1,15 +1,16 @@
+# Verify supervisor behavior.
 import os
 import socket
 import subprocess
 import sys
 import time
-from pathlib import Path
 import pytest
 from app.storage.database import Database
 from app.config import ROOT
 from scripts.stress_test_queues import Client, exercise
 
 
+# Verify actual supervisor pipeline and graceful stop.
 @pytest.mark.models
 def test_actual_supervisor_pipeline_and_graceful_stop(tmp_path):
     with socket.socket() as sock:

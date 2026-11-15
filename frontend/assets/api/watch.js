@@ -1,3 +1,4 @@
+// Reconcile collection events through server-sent updates and polling recovery.
 import { collectUpdates, eventCursor } from "../state/requests.js";
 import { ApiError } from "./client.js";
 
@@ -8,10 +9,7 @@ const PAGE_SIZE = 200;
 const STREAM_FLUSH_DELAY = 40;
 const MAX_TIMER_DELAY = 2_147_483_647;
 
-/**
- * SSE and polling share one cursor. Only one transport reads events at a time.
- * The consumer refreshes snapshots for changed IDs and for the visible collection.
- */
+// Subscribe to replayable collection updates with recovery and removal handling.
 export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onStatus, onRecover } = {},
   { EventSource, streamUrl, events }) {
   const controller = new AbortController();
@@ -28,12 +26,14 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
   let pollFailures = 0;
   let openedBefore = false;
 
+  // Notify the caller when the event connection status changes.
   function publish(next, error) {
     if (signal.aborted || (status === next && !error)) return;
     status = next;
     onStatus?.(next, error);
   }
 
+  // Accept only a newer valid replay cursor.
   function advance(items, pageCursor) {
     const previous = cursor;
     const update = collectUpdates(items, cursor, id);
@@ -41,6 +41,7 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     if (cursor > previous) void notifyEvents(update.events, cursor);
   }
 
+  // Deliver ordered events and advance the confirmed replay cursor.
   async function notifyEvents(updates, nextCursor) {
     try {
       await onEvents?.(updates, nextCursor);
@@ -49,6 +50,7 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     }
   }
 
+  // Deliver buffered stream events without overlapping event callbacks.
   function flushUpdates() {
     clearTimeout(streamFlush);
     streamFlush = undefined;
@@ -57,6 +59,7 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     if (updates.length && !signal.aborted) advance(updates);
   }
 
+  // Refresh snapshots after reconnecting or detecting an event gap.
   async function recover() {
     if (signal.aborted || !onRecover) return;
     if (recovering) {
@@ -77,12 +80,14 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     }
   }
 
+  // Close the current collection event stream and its pending callbacks.
   function closeStream() {
     const current = stream;
     stream = undefined;
     current?.close();
   }
 
+  // Release the stream, polling timers, and recovery resources.
   function cleanup() {
     if (signal.aborted) return;
     controller.abort();
@@ -93,6 +98,7 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     clearInterval(recoveryTimer);
   }
 
+  // Notify collection removal once and release its subscriptions.
   function removed() {
     if (signal.aborted) return;
     cleanup();
@@ -100,10 +106,12 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     onRemoved?.(id);
   }
 
+  // Schedule a bounded retry for the next collection event page.
   function schedulePoll(delay) {
     if (!signal.aborted) timeout = setTimeout(poll, Math.min(delay, MAX_TIMER_DELAY));
   }
 
+  // Switch unavailable streaming to cursor-based polling.
   function fallback() {
     if (signal.aborted) return;
     closeStream();
@@ -113,6 +121,7 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     schedulePoll(0);
   }
 
+  // Read retained events while respecting visibility and retry backoff.
   async function poll() {
     if (signal.aborted) return;
     const wasPolling = status === "polling";
@@ -123,8 +132,8 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
       pageCursor = eventCursor(page?.cursor);
       if (!Array.isArray(page?.events) || pageCursor === undefined) {
         throw new ApiError("The Fruispect service returned an invalid event page.", {
-          code: "INVALID_RESPONSE",
-        });
+            code: "INVALID_RESPONSE",
+          });
       }
     } catch (error) {
       if (signal.aborted) return;
@@ -153,6 +162,7 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     else schedulePoll(POLL_INTERVAL);
   }
 
+  // Open a live subscription for the selected collection and replay cursor.
   function openStream() {
     if (signal.aborted) return;
     publish(openedBefore || status === "polling" ? "reconnecting" : "connecting");
@@ -166,36 +176,36 @@ export function watchBatch(id, { cursor: initialCursor, onEvents, onRemoved, onS
     }
     stream = current;
     current.addEventListener("open", () => {
-      if (stream !== current || signal.aborted) return;
-      const shouldRecover = openedBefore || status === "reconnecting";
-      openedBefore = true;
-      publish("live");
-      if (shouldRecover) void recover();
-    });
+        if (stream !== current || signal.aborted) return;
+        const shouldRecover = openedBefore || status === "reconnecting";
+        openedBefore = true;
+        publish("live");
+        if (shouldRecover) void recover();
+      });
     current.addEventListener("update", (message) => {
-      if (stream !== current || signal.aborted) return;
-      let event;
-      try {
-        event = JSON.parse(message.data);
-      } catch {
-        fallback();
-        return;
-      }
-      const eventId = eventCursor(event?.event_id) ?? eventCursor(message.lastEventId);
-      if (!event || typeof event !== "object" || Array.isArray(event) || eventId === undefined) {
-        fallback();
-        return;
-      }
-      pendingUpdates.push({ ...event, event_id: eventId });
-      if (pendingUpdates.length >= PAGE_SIZE) flushUpdates();
-      else streamFlush ??= setTimeout(flushUpdates, STREAM_FLUSH_DELAY);
-    });
+        if (stream !== current || signal.aborted) return;
+        let event;
+        try {
+          event = JSON.parse(message.data);
+        } catch {
+          fallback();
+          return;
+        }
+        const eventId = eventCursor(event?.event_id) ?? eventCursor(message.lastEventId);
+        if (!event || typeof event !== "object" || Array.isArray(event) || eventId === undefined) {
+          fallback();
+          return;
+        }
+        pendingUpdates.push({ ...event, event_id: eventId });
+        if (pendingUpdates.length >= PAGE_SIZE) flushUpdates();
+        else streamFlush ??= setTimeout(flushUpdates, STREAM_FLUSH_DELAY);
+      });
     current.addEventListener("removed", () => {
-      if (stream === current) removed();
-    });
+        if (stream === current) removed();
+      });
     current.addEventListener("error", () => {
-      if (stream === current) fallback();
-    });
+        if (stream === current) fallback();
+      });
   }
 
   const recoveryTimer = setInterval(() => { void recover(); }, RECOVERY_INTERVAL);

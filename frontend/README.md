@@ -1,53 +1,31 @@
-# Final Fruispect HTML frontend
+# Fruispect frontend
 
-The supplied `../fruispect-frontend/` template is already built with HTML, CSS, and JavaScript, with no framework build required. Its design has been preserved in two forms outside that original folder.
+Run `main.py` from the repository root and open **http://127.0.0.1:5000**. Flask renders `app/templates/fruispect.html` and serves `frontend/assets/` at `/static/fruispect/`. JavaScript, styles, API requests, and browser sessions share the same origin. No bundler or separate frontend server is required.
 
-## Run the connected application
+## Source map
 
-From the repository root, run `./start.ps1` (or `.venv/Scripts/python.exe main.py`) and open **http://127.0.0.1:5000/**. Flask now serves the new design with the real API, browser sessions, model queues, and trained checkpoints. Wait for the three workers to become ready in **Operator console > Overview**.
+| Path under `assets/` | Responsibility |
+| --- | --- |
+| `app.js` | Shell, navigation, dialogs, and connection/pairing |
+| `api/` | Live HTTP service, validated limits, shared labels, SSE/polling |
+| `state/requests.js` | Event cursors and version-aware snapshot reconciliation |
+| `workspace/` | File intake, camera capture, uploads, collections, rendering, and commands |
+| `operator/` | Telemetry, owned requests, research, settings, reads, and commands |
+| `ui.js` | Safe markup, icons, formatting, downloads, and focus preservation |
+| `css/workspace/`, `css/operator/` | Base styles, feature layouts, and responsive rules |
+| `styles.css`, `operator.css` | Ordered stylesheet imports |
 
-`app/templates/fruispect.html` selects live mode, disables preview overrides, and injects the configured upload/pixel/batch limits and retention. Its external asset URLs resolve to `/static/fruispect/...`, served safely from this folder's `assets/` directory. No copy/build step or second frontend server is needed for live use.
+Each feature's `index.js` creates its own state, installs focused controllers, and binds browser events. Controllers receive shared state and an action registry explicitly; rendering modules format snapshots without changing queue order. Keep feature behavior in its controller and reusable markup in view/component modules.
 
-The current Admin capabilities are the existing localhost operator controls and browser-owned request details. Cross-browser request administration remains unavailable until protected Admin APIs are added.
+The browser uses only the current live API. Research views read saved artifacts; inference views read actual worker results. Request inspection covers collections owned by the current browser. Host-wide scan reset and phone retry remain restricted by the server to localhost.
 
-## Open the offline design preview
-
-**Double-click [the root index.html](../index.html)** or open it in your browser. This single file embeds all JavaScript, styles, the logo, and the sample photo. It works without Node, Python, an HTTP server, or an internet connection. It starts in clearly labeled **Design preview** mode, using the supplied template's sample scenarios. These are illustrative results, not predictions from the trained models.
-
-Use **Scan workspace**, **Collections**, and **Operator console** in the sidebar. The top-right scenario selector exposes the template's input, processing, results, recovery, and operator states. Selecting your own photo in this preview exercises the UI with fixture results; actual classification requires the backend.
-
-## Editable modular version
-
-[index.html](index.html) and [assets/](assets/) retain the template's separate stylesheets, JavaScript modules, and API adapter for editing and Flask integration. This edition defaults to **live** mode and expects the existing Flask API at the same origin. A backend connection error remains visible; it never silently switches to fixtures.
-
-To preview this modular edition without connecting a backend, run from the repository root:
-
-```powershell
-python frontend/preview.py
-```
-
-Then open **http://127.0.0.1:8080/**. The optional `--port 8081` selects another port. Ctrl+C stops the server. This preview server uses Python's standard library, binds to localhost, and explicitly selects design-preview mode in the HTML it serves. It does not run inference or proxy API calls. Live data requires same-origin hosting with Flask, not this preview server.
-
-## Backend integration boundary
-
-The connected live adapter is at [assets/api/live.js](assets/api/live.js). It uses relative `/api/...` routes, browser-session cookies, the `X-Fruispect: 1` command header, stable upload keys, SSE/polling, and three independent model results.
-
-Flask integration is installed in [the root route and asset handler](../app/api/routes.py) and [the live template](../app/templates/fruispect.html). Keep this editable asset tree alongside `app/` when moving/deploying the repository. The original supplied template in `fruispect-frontend/` is an archive; live changes belong in `frontend/assets/` and the Flask template.
-
-The root single-file edition embeds scripts/styles for convenient local viewing. Flask's existing CSP blocks inline scripts/styles, so it should not replace the live Flask template. Use the modular edition for that integration.
-
-Full cross-browser Admin requests still require protected backend additions, as documented in [the Admin report](../docs/uiux/ADMIN_VIEW_REPORT.md). Server-side permissions remain authoritative.
-
-Conversion adjustments are limited to packaging, file-URL navigation/image compatibility in the standalone edition, and allowing raster data-URL thumbnails generated by the preview uploader. The original template folder is preserved.
-
-## Rebuild the outputs
-
-After editing the maintained modular frontend, refresh the standalone preview with:
+## Verify changes
 
 ```powershell
-python -m scripts.build_frontend
+node tests/test_frontend.mjs
+.venv/Scripts/python.exe -m pytest -q tests/test_frontend_integration.py
 ```
 
-This refreshes only the root `index.html` from `frontend/index.html` and `frontend/assets/`. It leaves live assets and the Flask template intact. The module packer intentionally supports this template's named-import/declaration-export syntax and reports an error for unsupported syntax; it is not a general JavaScript bundler.
+Tests cover late-result selection, version reconciliation, idempotent upload admission, backpressure, camera cleanup, resource reads, and research formatting. Flask tests traverse the entire module import graph and verify asset access restrictions and configured limits.
 
-See [VERIFICATION.md](VERIFICATION.md) for the browser checks performed on these outputs.
+Use a one-line file purpose comment and one concise comment above each named function. Keep application scripts external so they work with the server's content security policy.

@@ -1,3 +1,4 @@
+# Define model labels and load validated application settings.
 import os
 from dataclasses import dataclass
 from pathlib import Path
@@ -29,16 +30,20 @@ class Settings:
     ngrok_path: str = ''
     ngrok_timeout: float = 20
 
+    # Return the configured private SQLite database path.
     @property
     def database(self):
         return self.instance / 'fruispect.sqlite3'
 
+    # Return the configured private image spool directory.
     @property
     def spool(self):
         return self.instance / 'spool'
 
+    # Load environment overrides and validate network access requirements.
     @classmethod
     def from_env(cls):
+        # Read and cast an environment setting with its default value.
         def val(name, default, cast=int):
             return cast(os.environ.get('FRUISPECT_' + name, default))
         host = os.environ.get('FRUISPECT_HOST', '127.0.0.1')

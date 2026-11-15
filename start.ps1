@@ -1,3 +1,4 @@
+# Launch Fruispect with the repository virtual environment.
 $ErrorActionPreference = 'Stop'
 Set-Location -LiteralPath $PSScriptRoot
 $fruispectPython = Join-Path $PSScriptRoot '.venv/Scripts/python.exe'

@@ -1,8 +1,4 @@
-"""Optional live ngrok check using only a disposable, health-only HTTP server.
-
-Never forwards to the application port or reads its saved scans. Closes the
-tunnel, HTTP server and temporary runtime even when the check fails.
-"""
+# Check ngrok using a disposable health server and temporary storage.
 import argparse
 import io
 import json
@@ -16,11 +12,12 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 from app.config import Settings
-from app.core.tunnel import TunnelManager
+from app.connection.manager import TunnelManager
 from app.storage.database import Database
 
 
 class HealthOnlyHandler(BaseHTTPRequestHandler):
+    # Do get.
     def do_GET(self):
         if self.path != '/health':
             self.send_error(404)
@@ -32,10 +29,12 @@ class HealthOnlyHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(payload)
 
+    # Suppress diagnostic server access logs.
     def log_message(self, *_):
         pass
 
 
+# Probe a temporary ngrok health endpoint and close its owned resources.
 def check(timeout=20):
     report = {}
     with tempfile.TemporaryDirectory(prefix='fruispect-phone-check-') as folder:
@@ -49,7 +48,7 @@ def check(timeout=20):
             try:
                 tunnel.reset(); tunnel.start()
                 while tunnel.state.get('status') == 'starting':
-                    # Do not print a pairing code: this test server has no app or pairing API.
+
                     with redirect_stdout(io.StringIO()):
                         tunnel.tick()
                     time.sleep(.1)

@@ -1,18 +1,20 @@
+// Merge versioned image snapshots and replay ordered collection events.
 import { isTerminal, MODELS } from "../api/contracts.js";
 
+// Validate a nonnegative event cursor for replay and version comparison.
 export function eventCursor(value) {
   if (typeof value === "string" && /^\d+$/.test(value)) value = Number(value);
   return Number.isSafeInteger(value) && value >= 0 ? value : undefined;
 }
 
-/** Collect new events in cursor order without assuming IDs are consecutive. */
+// Order new events and ignore duplicates and unrelated collections.
 export function collectUpdates(events, cursor, batchId) {
   const updates = [];
   const ordered = events
-    .map((event) => ({ event, id: eventCursor(event?.event_id) }))
-    .filter(({ event, id }) => id !== undefined && id > cursor
-      && (event.batch_id == null || event.batch_id === batchId))
-    .sort((a, b) => a.id - b.id);
+  .map((event) => ({ event, id: eventCursor(event?.event_id) }))
+  .filter(({ event, id }) => id !== undefined && id > cursor
+    && (event.batch_id == null || event.batch_id === batchId))
+  .sort((a, b) => a.id - b.id);
 
   for (const { event, id } of ordered) {
     if (id <= cursor) continue;
@@ -22,16 +24,13 @@ export function collectUpdates(events, cursor, batchId) {
   return { events: updates, cursor };
 }
 
-/** Use these IDs to refresh snapshots without changing the selected image. */
-export function changedImageIds(events) {
-  return [...new Set(events.map((event) => event.image_id).filter(Boolean))];
-}
-
+// Compare successful model predictions and describe comparison completeness.
 export function computeConsensus(jobs = {}) {
   const lanes = MODELS.map(({ key }) => jobs[key]);
   const results = lanes
-    .filter((job) => job?.status === "COMPLETED" && job.result)
-    .map((job) => job.result);
+  .filter((job) => job?.status === "COMPLETED" && job.result)
+  .map((job) => job.result);
+  // Disagreement.
   const disagreement = (field) => new Set(results.map((result) => result[field])
     .filter((value) => value != null)).size > 1;
 
@@ -48,6 +47,7 @@ export function computeConsensus(jobs = {}) {
   };
 }
 
+// Fill absent snapshot fields without overwriting retained values.
 function fillMissing(previous, incoming) {
   let merged = previous;
   for (const [field, value] of Object.entries(incoming)) {
@@ -58,6 +58,7 @@ function fillMissing(previous, incoming) {
   return merged;
 }
 
+// Merge one model job without allowing its version to move backward.
 export function mergeJob(previous, incoming) {
   if (!incoming) return previous;
   if (!previous || (previous.job_id && incoming.job_id && previous.job_id !== incoming.job_id)) {
@@ -77,7 +78,7 @@ export function mergeJob(previous, incoming) {
   return { ...previous, ...incoming };
 }
 
-/** Merge same-image snapshots while guarding against an out-of-order list or detail read. */
+// Merge image snapshots while preserving newer jobs and terminal results.
 export function mergeImage(previous, incoming) {
   if (!incoming) return previous;
   if (!previous || previous.image_id !== incoming.image_id) return incoming;
@@ -92,7 +93,7 @@ export function mergeImage(previous, incoming) {
     const previousVersion = eventCursor(previousJob?.version);
     const incomingVersion = eventCursor(incomingJob?.version);
     if (previousJob && (!incomingJob || (job === previousJob && previousVersion !== undefined
-      && (incomingVersion === undefined || incomingVersion < previousVersion)))) {
+          && (incomingVersion === undefined || incomingVersion < previousVersion)))) {
       retainedNewerJob = true;
     }
   }
@@ -100,9 +101,9 @@ export function mergeImage(previous, incoming) {
   const merged = { ...previous, ...incoming, jobs };
   if (["READY", "FAILED"].includes(previous.input_status) && incoming.input_status === "PROCESSING") {
     for (const field of [
-      "input_status", "input_error", "width", "height", "preprocess_ms",
-      "content_sha256", "preprocessing_sha256", "thumbnail_url",
-    ]) {
+        "input_status", "input_error", "width", "height", "preprocess_ms",
+        "content_sha256", "preprocessing_sha256", "thumbnail_url",
+      ]) {
       merged[field] = previous[field];
     }
   }

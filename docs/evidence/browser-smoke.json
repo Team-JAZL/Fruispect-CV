@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "checks": [
+    "real upload and three checkpoint results",
+    "collection navigation",
+    "operator overview, queues, requests, research, settings",
+    "reset confirmation and deletion",
+    "no browser exceptions or failed resources"
+  ]
+}

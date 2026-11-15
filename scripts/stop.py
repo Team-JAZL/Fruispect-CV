@@ -1,8 +1,9 @@
-"""Request graceful shutdown of the supervisor for the configured local instance."""
+# Request graceful shutdown of the configured application instance.
 from app.config import Settings
 from app.storage.database import Database
 
 
+# Run the stop command with configured arguments.
 def main():
     cfg = Settings.from_env()
     if not cfg.database.is_file():

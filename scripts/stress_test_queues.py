@@ -1,7 +1,4 @@
-"""Exercise a running real service. No mock inference, delays, or fabricated results.
-
-Synthetic fixture images measure transport/queue integrity, not fruit accuracy.
-"""
+# Measure real service queue integrity using synthetic image uploads.
 import argparse
 import http.cookiejar
 import io
@@ -19,10 +16,12 @@ from app.storage.database import iso
 
 
 class Client:
+    # Initialize the component and its required dependencies.
     def __init__(self, base):
         self.base = base
         self.opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
 
+    # Send an authenticated service request and decode its JSON response.
     def request(self, path, data=None, headers=None, method=None):
         req = urllib.request.Request(self.base + path, data=data, headers=headers or {}, method=method)
         try:
@@ -31,9 +30,11 @@ class Client:
         except urllib.error.HTTPError as exc:
             raise RuntimeError(f'{path}: HTTP {exc.code}: {exc.read().decode()}') from exc
 
+    # Send a bounded multipart image chunk with its stable admission key.
     def upload(self, batch, count, offset, key):
         boundary = uuid.uuid4().hex
         body = bytearray()
+        # Append one multipart form field to the outgoing upload body.
         def line(value):
             body.extend(value.encode() + b'\r\n')
         line(f'--{boundary}'); line('Content-Disposition: form-data; name="offset"'); line(''); line(str(offset))
@@ -47,11 +48,13 @@ class Client:
                             {'Content-Type': f'multipart/form-data; boundary={boundary}', 'X-Fruispect':'1', 'Idempotency-Key':key})
 
 
+# Calculate a percentile from sorted observed timing values.
 def percentile(values, fraction):
     values = sorted(values)
     return values[max(0, math.ceil(len(values) * fraction) - 1)]
 
 
+# Upload synthetic images and verify real model completion, ordering, and overlap.
 def exercise(client, count, timeout, restart_owned_pid=None):
     batch = client.request('/api/batches', b'', {'X-Fruispect':'1'})['batch']['batch_id']
     started = time.perf_counter()
@@ -116,7 +119,7 @@ def exercise(client, count, timeout, restart_owned_pid=None):
         terminal_order = [e['image_id'] for e in completed if e['model_key']==key]
         assert terminal_order == image_order, f'{key}: non-FIFO completion'
         start_order = [e['image_id'] for e in events if e['model_key']==key and e['event_type']=='model.started']
-        # Recovery may repeat a start, never move a newer admission ahead of an older one.
+
         seqs = [image_order.index(image_id) for image_id in start_order]
         assert seqs==sorted(seqs), f'{key}: non-FIFO start'
     independent = None
@@ -155,6 +158,7 @@ def exercise(client, count, timeout, restart_owned_pid=None):
                                  'p95':percentile([row['jobs'][key]['inference_ms'] for row in records],.95)} for key in MODELS}}
 
 
+# Run the stress test queues command with configured arguments.
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--url',default='http://127.0.0.1:5000')

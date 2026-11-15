@@ -1,3 +1,4 @@
+// Send same-origin requests and normalize errors, retry delays, and downloads.
 const STATUS_CODES = {
   401: "PAIRING_REQUIRED",
   403: "FORBIDDEN",
@@ -10,6 +11,7 @@ const STATUS_CODES = {
 };
 
 export class ApiError extends Error {
+  // Initialize the API error with response details and retry information.
   constructor(message, { status = 0, code, payload, retryAfterMs, cause } = {}) {
     super(message, { cause });
     this.name = "ApiError";
@@ -20,6 +22,7 @@ export class ApiError extends Error {
   }
 }
 
+// Parse a retry header into a bounded delay in milliseconds.
 export function parseRetryAfter(value, now = Date.now()) {
   const header = value?.trim();
   if (!header) return undefined;
@@ -31,10 +34,12 @@ export function parseRetryAfter(value, now = Date.now()) {
   return Number.isFinite(date) ? Math.max(0, date - now) : undefined;
 }
 
+// Create a same-origin HTTP transport with consistent API errors.
 export function createHttpClient(fetch = globalThis.fetch?.bind(globalThis)) {
+  // Send a browser request and decode its payload or structured failure.
   return async function request(path, {
-    method = "GET", signal, json, form, key, asFile, acceptError,
-  } = {}) {
+      method = "GET", signal, json, form, key, asFile, acceptError,
+    } = {}) {
     const headers = new Headers();
     if (!asFile) headers.set("Accept", "application/json");
     if (method === "POST") headers.set("X-Fruispect", "1");
@@ -48,8 +53,8 @@ export function createHttpClient(fetch = globalThis.fetch?.bind(globalThis)) {
     } catch (cause) {
       if (signal?.aborted || cause?.name === "AbortError") throw cause;
       throw new ApiError("The Fruispect service could not be reached.", {
-        code: "NETWORK_ERROR", cause,
-      });
+          code: "NETWORK_ERROR", cause,
+        });
     }
 
     if (asFile && response.ok) {
@@ -65,8 +70,8 @@ export function createHttpClient(fetch = globalThis.fetch?.bind(globalThis)) {
       if (signal?.aborted || cause?.name === "AbortError") throw cause;
       if (response.ok) {
         throw new ApiError("The Fruispect service returned an invalid JSON response.", {
-          status, code: "INVALID_RESPONSE", cause,
-        });
+            status, code: "INVALID_RESPONSE", cause,
+          });
       }
     }
 
@@ -75,11 +80,12 @@ export function createHttpClient(fetch = globalThis.fetch?.bind(globalThis)) {
     }
 
     throw new ApiError(payload?.error?.message || ("Fruispect request failed (HTTP " + status + ")."), {
-      status, code: payload?.error?.code, payload, retryAfterMs,
-    });
+        status, code: payload?.error?.code, payload, retryAfterMs,
+      });
   };
 }
 
+// Extract a safe filename from the response download headers.
 export function downloadName(disposition, fallback) {
   const extended = disposition?.match(/(?:^|;)\s*filename\*=(?:"([^"]*)"|([^;]*))/i);
   const encoded = (extended?.[1] ?? extended?.[2])?.trim().match(/^utf-8'[^']*'(.*)$/i);
@@ -95,6 +101,7 @@ export function downloadName(disposition, fallback) {
   return safeName(plain?.[1]?.replace(/\\(["\\])/g, "$1") ?? plain?.[2]) || fallback;
 }
 
+// Strip path components and control characters from a download filename.
 function safeName(value) {
   const name = value?.split(/[/\\]/).pop()?.replace(/[\u0000-\u001f\u007f]/g, "").trim();
   return name === "." || name === ".." ? undefined : name;

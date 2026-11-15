@@ -1,3 +1,4 @@
+# Verify tunnel behavior.
 import io
 import json
 import time
@@ -5,10 +6,13 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock
 import pytest
-from app.core import tunnel as module
-from app.core.tunnel import TunnelManager, find_ngrok, https_origin, read_tunnel
+from app.connection import discovery, manager as module
+from app.connection.discovery import find_ngrok
+from app.connection.manager import TunnelManager
+from app.connection.state import https_origin, read_tunnel
 
 
+# Install state.
 def install_state(database, **values):
     state = {'status':'ready', 'public_url':'https://fruit.example.test', 'pair_code':'A123B456',
              'generation':'test-generation', 'expires_at':time.time()+30, **values}
@@ -16,9 +20,9 @@ def install_state(database, **values):
         db.execute("INSERT OR REPLACE INTO service_state VALUES('tunnel',?)", (json.dumps(state),))
 
 
+# Verify discovery configured portable and missing.
 def test_discovery_configured_portable_and_missing(tmp_path, monkeypatch):
-    monkeypatch.setattr(module, 'KNOWN_NGROK', tmp_path/'absent')
-    monkeypatch.setattr(module.shutil, 'which', lambda _: None)
+    monkeypatch.setattr(discovery.shutil, 'which', lambda _: None)
     root = tmp_path/'project';root.mkdir()
     assert find_ngrok(root=root,home=tmp_path/'home') is None
     portable = root/'tools'/'ngrok.exe';portable.parent.mkdir();portable.write_bytes(b'fixture')
@@ -28,6 +32,7 @@ def test_discovery_configured_portable_and_missing(tmp_path, monkeypatch):
     assert find_ngrok(str(custom),root=root) == custom.resolve()
 
 
+# Verify tunnel optional and failed start do not stop local.
 def test_tunnel_optional_and_failed_start_do_not_stop_local(cfg,database,monkeypatch):
     manager = TunnelManager(replace(cfg,ngrok_enabled=False),database,5000)
     manager.start();assert read_tunnel(database)['status']=='disabled'
@@ -39,6 +44,7 @@ def test_tunnel_optional_and_failed_start_do_not_stop_local(cfg,database,monkeyp
     manager.start();assert read_tunnel(database)['status']=='failed'
 
 
+# Verify owned process https discovery timeout and cleanup.
 def test_owned_process_https_discovery_timeout_and_cleanup(cfg,database,monkeypatch):
     monkeypatch.setattr(module,'find_ngrok',lambda _:Path('ngrok.exe'))
     process=Mock();process.poll.return_value=None
@@ -56,11 +62,13 @@ def test_owned_process_https_discovery_timeout_and_cleanup(cfg,database,monkeypa
     assert read_tunnel(database)['status']=='failed';process.terminate.assert_called_once()
 
 
+# Verify only https origins are admitted.
 @pytest.mark.parametrize('bad',['http://fruit.example.test','https://user:pass@fruit.example.test','https://fruit.example.test/private','javascript:alert(1)','https://fruit.example.test:1234'])
 def test_only_https_origins_are_admitted(bad):
     assert https_origin(bad) is None
 
 
+# Verify pairing and origin protection.
 def test_pairing_and_origin_protection(client,database,app):
     install_state(database)
     local=client.get('/api/connection').get_json()['connection']
@@ -78,7 +86,7 @@ def test_pairing_and_origin_protection(client,database,app):
     assert paired.status_code==200 and 'Secure;' in paired.headers['Set-Cookie']
     assert phone.get('/api/models',base_url=base).status_code==200
     assert 'pair_code' not in phone.get('/api/connection',base_url=base).get_json()['connection']
-    # No forwarded scheme or arbitrary host bypass, including rewritten localhost.
+
     assert phone.get('/api/models',base_url='http://fruit.example.test').status_code==403
     assert phone.get('/api/connection',base_url='https://localhost').status_code==403
     assert phone.get('/api/connection',base_url=base,environ_overrides={'REMOTE_ADDR':'192.0.2.1'}).status_code==403
@@ -88,6 +96,7 @@ def test_pairing_and_origin_protection(client,database,app):
     assert phone.get('/api/models',base_url=base).status_code==403
 
 
+# Verify pairing attempts bounded and no local pair.
 def test_pairing_attempts_bounded_and_no_local_pair(client,database,app):
     install_state(database)
     assert client.post('/api/connect',headers={'X-Fruispect':'1'},json={'code':'A123B456'}).status_code==409
@@ -97,8 +106,9 @@ def test_pairing_attempts_bounded_and_no_local_pair(client,database,app):
     assert phone.post('/api/connect',base_url='https://fruit.example.test',headers={'X-Fruispect':'1'},json={'code':'A123B456'}).status_code==429
 
 
+# Verify web readiness requires own bound socket.
 def test_web_readiness_requires_own_bound_socket(cfg,monkeypatch):
-    import main
+    from app.runtime import processes as main
     import waitress
     ready=Mock()
     monkeypatch.setattr(main,'create_app',lambda _:Mock())
@@ -112,6 +122,7 @@ def test_web_readiness_requires_own_bound_socket(cfg,monkeypatch):
     ready.set.assert_called_once();server.run.assert_called_once()
 
 
+# Verify plain text error drain and repeated start.
 def test_plain_text_error_drain_and_repeated_start(cfg, database, monkeypatch):
     monkeypatch.setattr(module, 'find_ngrok', lambda _: Path('ngrok.exe'))
     monkeypatch.setattr(module, 'ChildProcessGuard', Mock())
@@ -135,14 +146,16 @@ def test_plain_text_error_drain_and_repeated_start(cfg, database, monkeypatch):
     assert not any(k in read_tunnel(database) for k in ('public_url', 'pair_code', 'generation'))
 
 
+# Verify retry request is local and explicit.
 def test_retry_request_is_local_and_explicit(client, database):
     assert client.post('/api/connection/retry', headers={'X-Fruispect': '1'}).status_code == 202
     with database.connect() as db:
         assert db.execute("SELECT value FROM service_state WHERE key='tunnel_retry'").fetchone()[0] == '1'
 
 
+# Verify startup failure still closes tunnel and releases instance lock.
 def test_startup_failure_still_closes_tunnel_and_releases_instance_lock(cfg, monkeypatch):
-    import main
+    from app.runtime import supervisor as main
     from app.storage.database import Database
     manager = Mock()
     monkeypatch.setattr(main, 'TunnelManager', Mock(return_value=manager))
@@ -151,18 +164,19 @@ def test_startup_failure_still_closes_tunnel_and_releases_instance_lock(cfg, mon
         with pytest.raises(RuntimeError, match='startup failed'):
             main.supervise(cfg)
     manager.close.assert_called_once()
-    # A second launch can acquire the same lock after the failed first launch.
+
     with main.instance_lock(cfg):
         pass
     with Database(cfg.database).connect() as db:
         assert db.execute("SELECT value FROM service_state WHERE key='accepting'").fetchone()[0] == '0'
 
 
+# Verify windows guard stops only its assigned process.
 @pytest.mark.skipif(module.os.name != 'nt', reason='Windows process ownership')
 def test_windows_guard_stops_only_its_assigned_process():
     import subprocess
     import sys
-    from app.core.process_guard import ChildProcessGuard
+    from app.runtime.guard import ChildProcessGuard
     process = subprocess.Popen([sys.executable, '-c', 'import time; time.sleep(60)'],
                                creationflags=subprocess.CREATE_NO_WINDOW)
     try:
@@ -176,6 +190,7 @@ def test_windows_guard_stops_only_its_assigned_process():
             process.kill(); process.wait(timeout=5)
 
 
+# Verify windows guard cleans child after supervisor is force closed.
 @pytest.mark.skipif(module.os.name != 'nt', reason='Windows process ownership')
 def test_windows_guard_cleans_child_after_supervisor_is_force_closed():
     import subprocess
@@ -183,7 +198,7 @@ def test_windows_guard_cleans_child_after_supervisor_is_force_closed():
     import psutil
     from app.config import ROOT
     code = '''import subprocess,sys,time
-from app.core.process_guard import ChildProcessGuard
+from app.runtime.guard import ChildProcessGuard
 child=subprocess.Popen([sys.executable,'-c','import time;time.sleep(60)'],
                        stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
                        creationflags=subprocess.CREATE_NO_WINDOW)

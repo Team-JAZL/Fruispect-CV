@@ -1,14 +1,28 @@
 # Architecture and API
 
+## Components
+
+`main.py` delegates to `app/runtime/supervisor.py`, which holds the instance lock and supervises a Waitress web process plus three spawned model workers. Each worker loads one checkpoint, validates its outputs, renews a lane lease, and performs one forward pass at a time.
+
+| Package | Responsibility |
+| --- | --- |
+| `app/api/` | Small route modules sharing ownership and service helpers |
+| `app/runtime/` | Supervision, process entry points, instance locking, child process guard |
+| `app/inference/` | Strict checkpoint loading and recorded preprocessing |
+| `app/queue/` | Independent FIFO lanes, leases, recovery, and worker execution |
+| `app/connection/` | Portable executable discovery and expiring tunnel state |
+| `app/services/` | Admission, cleanup, research access, and snapshot assembly |
+| `app/storage/` | SQLite connections, SQL schema, events, and job transitions |
+
+`app/__init__.py` creates the application and installs `security.py`, `errors.py`, and the API blueprints. SQLite WAL uses a busy timeout, foreign keys, and short explicit write transactions. Image transforms and inference run outside those transactions.
+
 ## Connected frontend
 
-The root Flask route renders `app/templates/fruispect.html` in live mode, with preview overrides disabled and configured file/pixel/batch limits and retention injected as meta tags. `/static/fruispect/<filename>` safely serves the editable `frontend/assets/` tree. Modules and API calls share the Flask origin, preserving cookies, origin checks, and the existing CSP without inline-script/style allowances.
+Flask renders `app/templates/fruispect.html` with configured input limits and retention. `/static/fruispect/<filename>` serves the maintained `frontend/assets/` tree safely. Modules and API calls share the Flask origin and its restrictive content security policy.
 
-`frontend/assets/api/live.js` handles admission, snapshots, commands, exports, and SSE/polling. User scanning/collections and the Operator console use actual API data. Operator research matches the saved CSV's model display names to stable model keys. Full cross-browser Admin request APIs are still unimplemented; the interface reports that limitation.
+`frontend/assets/app.js` manages navigation and pairing. `workspace/index.js` and `operator/index.js` assemble focused controllers with explicit state and action dependencies. View modules render snapshots; `state/requests.js` reconciles versioned results. `api/live.js` speaks the current API, and `api/watch.js` combines SSE replay with polling recovery. Styles are divided by feature under `css/` and loaded in a fixed cascade order.
 
-The root repository `index.html` remains an explicitly labeled, standalone offline design preview. `python -m scripts.build_frontend` rebuilds that preview from the maintained `frontend/` source and does not overwrite live assets. Use `main.py`/`start.ps1` and port 5000 for real inference. The optional `frontend/preview.py` server on port 8080 is for fixture previews only.
-
-`main.py` holds an OS lock and supervises a Waitress web process plus three spawned model workers. Each worker loads one checkpoint once, runs a smoke test, renews a lane lease, and performs one forward pass at a time. SQLite WAL has a busy timeout, foreign keys, and short `BEGIN IMMEDIATE` transactions. Transforms/inference occur outside transactions.
+Research views use original CSV model names and figure catalog paths. Operator request inspection covers this browser's collections. See [frontend source map](../frontend/README.md) and [configuration](CONFIGURATION.md).
 
 ## Optional phone access
 

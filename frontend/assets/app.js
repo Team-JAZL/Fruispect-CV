@@ -1,17 +1,15 @@
+// Mount the application shell, navigation, dialogs, and phone pairing.
 import { createLiveService } from './api/live.js';
 import { readConfig } from './api/config.js';
-import { createPreviewService, SCENARIOS } from './preview.js';
-import { mountOperator } from './operator.js';
-import { createWorkspace } from './workspace.js';
+import { mountOperator } from './operator/index.js';
+import { createWorkspace } from './workspace/index.js';
 import { escapeHtml as e, icon } from './ui.js';
 
 const config = readConfig();
-const mode = config.mode;
-const demo = mode === 'design-preview';
+
 const params = new URLSearchParams(location.search);
-const scenario = SCENARIOS.some(entry => entry.id === params.get('scenario'))
-  ? params.get('scenario') : 'partial';
-const service = demo ? createPreviewService(scenario) : createLiveService();
+
+const service = createLiveService();
 const pairingCode = new URLSearchParams(location.hash.slice(1)).get('connect');
 if (pairingCode !== null) history.replaceState(null, '', location.pathname + location.search);
 const app = document.querySelector('#app');
@@ -22,9 +20,9 @@ const pages = {
   operator: { label: 'Operator console', icon: 'tune' },
 };
 const initialPage = params.get('view');
-const selectedScenario = SCENARIOS.find(item => item.id === scenario);
+
 let page = Object.hasOwn(pages, initialPage) ? initialPage
-  : demo && scenario !== 'pairing' && selectedScenario?.group === 'Operator' ? 'operator' : 'scan';
+: ('scan');
 let connection = null;
 let readyForReads = false;
 let needsPairing = false;
@@ -33,14 +31,7 @@ let workspace = null;
 let notifyTimeout;
 let connectionSequence = 0;
 
-function scenarios() {
-  const groups = [...new Set(SCENARIOS.map(item => item.group ?? 'Preview scenarios'))];
-  return groups.map(group => `<optgroup label="${e(group)}">${SCENARIOS
-    .filter(item => (item.group ?? 'Preview scenarios') === group)
-    .map(item => `<option value="${e(item.id)}"${item.id === scenario ? ' selected' : ''}>${e(item.label)}</option>`)
-    .join('')}</optgroup>`).join('');
-}
-
+// Render a button for an application navigation destination.
 function nav(name) {
   return `<button type="button" class="nav-item" data-page="${name}">${icon(pages[name].icon)}<span>${pages[name].label}</span>${name === 'operator' ? icon('outside', 13) : ''}</button>`;
 }
@@ -56,8 +47,8 @@ app.innerHTML = `<div class="shell">
       <div class="nav-group"><p>OPERATIONS</p>${nav('operator')}</div>
     </nav>
     <div class="sidebar-foot">
-      <div class="session-card"><span class="session-icon">${icon(demo ? 'eye' : 'activity', 17)}</span>
-        <span><strong>${demo ? 'Preview session' : 'Host session'}</strong><small id="session-caption">${demo ? 'Sample data' : 'Connecting to Fruispect'}</small></span>
+      <div class="session-card"><span class="session-icon">${icon(('activity'), 17)}</span>
+        <span><strong>Host session</strong><small id="session-caption">Connecting to Fruispect</small></span>
       </div>
       <p>Fruispect<span aria-hidden="true"> · </span>Research workspace</p>
     </div>
@@ -67,9 +58,7 @@ app.innerHTML = `<div class="shell">
       <div class="breadcrumb"><button class="icon-button mobile-menu" type="button" aria-label="Toggle navigation" aria-expanded="false" aria-controls="navigation">${icon('menu')}</button>
         <span class="crumb-home">Workspace</span><span class="crumb-home">${icon('chevron', 14)}</span><strong id="crumb-current"></strong>
       </div>
-      <div class="top-actions">${demo ? `<span class="preview-label"><i></i> Design preview</span>
-        <label class="scenario-label"><span class="sr-only">Preview scenario</span><select id="scenario">${scenarios()}</select></label>`
-        : `<span id="connection-chip" class="badge neutral"><i></i> Connecting</span>`}</div>
+      <div class="top-actions">${(`<span id="connection-chip" class="badge neutral"><i></i> Connecting</span>`)}</div>
     </header>
     <main id="main" tabindex="-1" class="main-content">
       <div id="connection-panel"></div>
@@ -99,6 +88,7 @@ const confirmInput = document.querySelector('#confirm-input');
 const confirmLabel = document.querySelector('#confirm-input-label');
 const applyButton = document.querySelector('#confirm-apply');
 
+// Display a temporary application status or error message.
 function notify(message, tone = 'info') {
   const toast = document.querySelector('#toast');
   clearTimeout(notifyTimeout);
@@ -108,6 +98,7 @@ function notify(message, tone = 'info') {
   notifyTimeout = setTimeout(() => { toast.hidden = true; }, 6500);
 }
 
+// Request confirmation and enforce any required confirmation text.
 function confirmAction({ title, body, label = 'Confirm', requireText = '' }) {
   if (dialog.open) return Promise.resolve(false);
   document.querySelector('#confirm-title').textContent = title;
@@ -121,24 +112,27 @@ function confirmAction({ title, body, label = 'Confirm', requireText = '' }) {
   dialog.returnValue = 'cancel';
   dialog.showModal();
   return new Promise(resolve => dialog.addEventListener('close', () => {
-    resolve(dialog.returnValue === 'apply' && (!requireText || confirmInput.value === requireText));
-  }, { once: true }));
+        resolve(dialog.returnValue === 'apply' && (!requireText || confirmInput.value === requireText));
+      }, { once: true }));
 }
 
+// Update the connection badge and session caption together.
 function setConnectionIndicator(label, tone) {
   const chip = document.querySelector('#connection-chip');
   if (chip) {
     chip.className = `badge ${tone}`;
     chip.innerHTML = `<i></i> ${e(label)}`;
   }
-  if (!demo) document.querySelector('#session-caption').textContent = label;
+  document.querySelector('#session-caption').textContent = label;
 }
 
+// Show a recoverable connection error with a retry control.
 function showError(message) {
   connectionPanel.innerHTML = `<div class="callout warn" role="status">${icon('alert')}<div><strong>Fruispect connection</strong><p>${e(message)}</p></div><button type="button" class="button small" id="retry-app">Try again</button></div>`;
   connectionPanel.querySelector('#retry-app').onclick = () => { initialize(); };
 }
 
+// Render phone pairing controls and suspend unpaired reads.
 function showPairing(message = '') {
   needsPairing = true;
   readyForReads = false;
@@ -163,6 +157,7 @@ function showPairing(message = '') {
   };
 }
 
+// Switch workspace views and maintain navigation and operator lifecycle.
 function showPage(next, { focus = true, write = true } = {}) {
   if (!Object.hasOwn(pages, next)) next = 'scan';
   if (next !== page && page === 'operator') {
@@ -187,8 +182,8 @@ function showPage(next, { focus = true, write = true } = {}) {
   if (next === 'operator' && !disposeOperator) {
     if (readyForReads || connection && !needsPairing) {
       disposeOperator = mountOperator(operatorRoot, {
-        service, connection, mode, confirmAction, notify, scenario,
-      }) ?? (() => {});
+          service, connection, confirmAction, notify,
+        }) ?? (() => {});
     } else {
       operatorRoot.innerHTML = `<div class="empty"><h1>Operator console</h1><p>${needsPairing ? 'Pair this browser to continue.' : 'Waiting for the host connection.'}</p></div>`;
     }
@@ -198,6 +193,7 @@ function showPage(next, { focus = true, write = true } = {}) {
   if (focus) document.querySelector('#main').focus({ preventScroll: true });
 }
 
+// Load connection state and prepare the authorized browser workspace.
 async function initialize(code = null, pairedNow = false) {
   const requestId = ++connectionSequence;
   try {
@@ -229,39 +225,27 @@ async function initialize(code = null, pairedNow = false) {
 }
 
 workspace = createWorkspace(userRoot, {
-  service, config, mode, scenario, scenarioLabel: selectedScenario?.label, confirmAction, notify,
-  onNavigate: showPage, onPairing: showPairing,
-});
-
-document.querySelector('#scenario')?.addEventListener('change', event => {
-  const url = new URL(location.href);
-  const option = SCENARIOS.find(item => item.id === event.target.value);
-  url.searchParams.set('scenario', event.target.value);
-  const group = String(option?.group ?? '');
-  const admin = /operator|admin|research|connection/i.test(group)
-    || /operator|admin|research|reset|tunnel|queues|request|offline/i.test(event.target.value);
-  if (admin && option?.id !== 'pairing') url.searchParams.set('view', 'operator');
-  else url.searchParams.delete('view');
-  location.assign(url);
-});
+    service, config, confirmAction, notify,
+    onNavigate: showPage, onPairing: showPairing,
+  });
 
 app.addEventListener('click', event => {
-  const target = event.target.closest('[data-page]');
-  if (target) showPage(target.dataset.page);
-});
+    const target = event.target.closest('[data-page]');
+    if (target) showPage(target.dataset.page);
+  });
 menuButton.addEventListener('click', () => {
-  const open = sidebar.classList.toggle('mobile-open');
-  menuButton.setAttribute('aria-expanded', String(open));
-});
+    const open = sidebar.classList.toggle('mobile-open');
+    menuButton.setAttribute('aria-expanded', String(open));
+  });
 window.addEventListener('popstate', () => {
-  showPage(new URLSearchParams(location.search).get('view') ?? 'scan', { write: false });
-});
+    showPage(new URLSearchParams(location.search).get('view') ?? 'scan', { write: false });
+  });
 window.addEventListener('pagehide', () => {
-  disposeOperator?.();
-  disposeOperator = null;
-});
+    disposeOperator?.();
+    disposeOperator = null;
+  });
 window.addEventListener('pageshow', event => {
-  if (event.persisted) showPage(page, { focus: false, write: false });
-});
+    if (event.persisted) showPage(page, { focus: false, write: false });
+  });
 showPage(page, { focus: false, write: false });
 initialize(pairingCode);
