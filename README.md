@@ -4,12 +4,15 @@
 
 Includes upload, paste, drag/drop, folder and batch intake, still camera capture and optional throttled sampling, live partial results, a paginated collection, disagreement filters, queue telemetry, CSV/JSON export, and a dashboard sourced from preserved research artifacts. Core operation requires no Internet connection after installation.
 
+The new User and Operator design is connected to Flask at **http://127.0.0.1:5000/**. Edit its live assets in `frontend/assets/`; Flask renders `app/templates/fruispect.html` with server-configured limits and live mode enforced. The root `index.html` and the optional port-8080 server remain labeled offline design previews. See [frontend usage and integration](frontend/README.md).
+
 ## Run on Windows
 
-From this repository in PowerShell, using Python 3.14 (tested: 3.14.5):
+From this repository in PowerShell, using Python 3.12 or 3.14 (tested: 3.12.10 and 3.14.5):
 
 ```powershell
 python -m venv .venv
+.venv/Scripts/python.exe -m pip install torch==2.13.0+cpu torchvision==0.28.0+cpu --index-url https://download.pytorch.org/whl/cpu
 .venv/Scripts/python.exe -m pip install -r requirements-lock.txt
 .venv/Scripts/python.exe -m scripts.audit_artifacts --output test-results/artifact-audit.json
 .venv/Scripts/python.exe main.py
@@ -19,7 +22,7 @@ Open **http://127.0.0.1:5000**. `./start.ps1` is an alternative launcher after s
 
 From another shell, `.venv/Scripts/python.exe -m scripts.stop` requests the same graceful shutdown for the configured instance. Keep checkpoint/preprocessing files unchanged while running; restore consistent research metadata and restart after any intentional artifact update.
 
-The provisioned `.venv` uses `--system-site-packages` to reuse installed CPU PyTorch. The commands above describe a clean setup. On Linux/macOS, use `.venv/bin/python` for equivalent commands. CPU is verified. Runtime pins are newer than training's PyTorch 2.11.0/TorchVision 0.26.0; strict load and reference parity were verified on the pinned runtime. See [compatibility](docs/COMPATIBILITY.md).
+The current checkout uses an isolated `.venv` with CPU PyTorch installed from its official wheel index. The commands above describe that setup. On Linux/macOS, use `.venv/bin/python` for equivalent commands. CPU is verified. Runtime pins are newer than training's PyTorch 2.11.0/TorchVision 0.26.0; strict load and reference parity were verified on the pinned runtime. See [compatibility](docs/COMPATIBILITY.md).
 
 For offline installation, prepare wheels on a connected machine with matching OS/Python, then transfer locally:
 

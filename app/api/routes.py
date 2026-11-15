@@ -4,7 +4,7 @@ import json
 import time
 import uuid
 from pathlib import Path
-from flask import Blueprint, Response, abort, current_app, g, jsonify, render_template, request, send_file, session, stream_with_context
+from flask import Blueprint, Response, abort, current_app, g, jsonify, render_template, request, send_file, send_from_directory, session, stream_with_context
 from contextlib import contextmanager
 from app.core.cleanup import delete_collections
 from app.core.ingestion import ingest, AdmissionError
@@ -43,7 +43,13 @@ def integer(name, default, lower=0, upper=1000000000):
 @api.get('/')
 def index():
     _, cfg = services()
-    return render_template('index.html', max_mb=cfg.max_file_bytes // 1024 ** 2, max_batch=cfg.max_batch)
+    return render_template('fruispect.html', frontend_settings=cfg)
+
+
+@api.get('/static/fruispect/<path:filename>')
+def frontend_asset(filename):
+    # Keep the editable frontend as the source of truth; resolve files safely.
+    return send_from_directory(Path(current_app.root_path).parent / 'frontend' / 'assets', filename)
 
 
 @api.get('/api/health')

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="fruispect-mode" content="live">
+  <meta name="fruispect-allow-preview" content="false">
+  <meta name="fruispect-max-file-bytes" content="{{ frontend_settings.max_file_bytes }}">
+  <meta name="fruispect-max-decoded-pixels" content="{{ frontend_settings.max_pixels }}">
+  <meta name="fruispect-max-batch-images" content="{{ frontend_settings.max_batch }}">
+  <meta name="fruispect-retention-hours" content="{{ frontend_settings.retention_hours }}">
+  <meta name="description" content="Fruispect compares three independent models' fruit and visual-quality predictions.">
+  <title>Fruispect — Fruit quality checker</title>
+  <link rel="icon" href="{{ url_for('api.frontend_asset', filename='mark.svg') }}" type="image/svg+xml">
+  <link rel="stylesheet" href="{{ url_for('api.frontend_asset', filename='styles.css') }}">
+  <link rel="stylesheet" href="{{ url_for('api.frontend_asset', filename='operator.css') }}">
+  <script type="module" src="{{ url_for('api.frontend_asset', filename='app.js') }}"></script>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to main content</a>
+  <div id="app"><p class="startup" role="status">Opening Fruispect…</p></div>
+  <noscript><p class="startup">Enable JavaScript to use the Fruispect workspace.</p></noscript>
+</body>
+</html>

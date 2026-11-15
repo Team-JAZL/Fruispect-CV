@@ -40,4 +40,6 @@ Adapter and original helper loaded separate model instances. Each model was chec
 
 ## Available research and limits
 
+The connected frontend was additionally verified on Windows with Python 3.12.10, PyTorch 2.13.0+cpu, TorchVision 0.28.0+cpu, and the existing locked NumPy/Pillow/runtime dependencies. All 54 backend tests passed, including strict checkpoint/reference parity and the real supervisor pipeline. Browser verification uploaded a photo through the new UI and checked three completed results against the checkpoint hashes. See [frontend verification](../frontend/VERIFICATION.md).
+
 Present: manifest, versions, preprocessing, split ledger, three checkpoints, helper, 31 figures in PNG/PDF, per-seed reports/history/test prediction CSVs, and class/summary/stress tables. Dashboard reads authentic CSV/catalog values. Original dataset photographs are absent; split paths refer to the Kaggle environment. No new photographic accuracy evaluation was performed. Saved evidence covers 1,200 held-out images, one seed per architecture, and controlled changes to those images; it does not establish camera-domain accuracy or across-run variability. CUDA was not verified on this CPU-only host.
