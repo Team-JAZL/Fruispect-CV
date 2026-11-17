@@ -1,0 +1,19 @@
+{
+  "recorded_date": "2026-11-18",
+  "timezone": "Asia/Singapore",
+  "browser": "Isolated headless Microsoft Edge",
+  "fixture_scope": "Disposable local instance, retained test uploads from independent browser sessions; API and supervisor suites separately verify actual inference and paired tunnel access.",
+  "viewport_widths": [
+    1440,
+    390
+  ],
+  "checks": [
+    "Host-only navigation, retained device collections, thumbnails and desktop gallery",
+    "Global result dialog, source attribution, three independent model cards and MAC limitation",
+    "Your Collections keeps the host browser separate from other devices",
+    "Global gallery discovers another browser upload automatically",
+    "Mobile gallery and source dialog fit viewport",
+    "Remote browser hides Global Collections, rejects direct link and denies global API"
+  ],
+  "errors": []
+}

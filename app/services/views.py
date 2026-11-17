@@ -9,14 +9,17 @@ from app.storage.jobs import TERMINAL
 
 
 # Assemble an image snapshot with independent jobs and agreement state.
-def image_view(db, image_id):
+def image_view(db, image_id, *, global_scope=False):
     row = db.execute('SELECT * FROM images WHERE image_id=?', (image_id,)).fetchone()
     if not row:
         return None
     image = {key: row[key] for key in ('image_id', 'batch_id', 'admission_seq', 'original_filename', 'content_sha256',
                                       'input_status', 'input_error', 'width', 'height', 'preprocess_ms', 'preprocessing_sha256')}
     image.update(received_at=iso(row['received_at']), retention_expires_at=iso(row['retention_expires_at']),
-                 thumbnail_url=f'/api/images/{image_id}/thumbnail')
+                 thumbnail_url=f'/api/{"global/" if global_scope else ""}images/{image_id}/thumbnail')
+    if global_scope:
+        source = db.execute('SELECT * FROM upload_sources WHERE image_id=?', (image_id,)).fetchone()
+        image['upload_source'] = {key: source[key] for key in source.keys() if key != 'image_id'} if source else None
     jobs = {}
     for job in db.execute('SELECT * FROM model_jobs WHERE image_id=?', (image_id,)):
         value = dict(job)

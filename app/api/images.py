@@ -1,14 +1,15 @@
-# Filter image collections and serve owned image results and thumbnails.
+# Filter collections and serve images within personal or protected host scopes.
 from pathlib import Path
-from flask import abort, jsonify, request, send_file
+from flask import abort, g, jsonify, request, send_file
 from app.queue.coordinator import Coordinator
 from app.services.views import image_view
 from app.api import api
-from app.api.common import services, own_batch, own_image, integer
+from app.api.common import services, access_batch, access_image, integer
 
 
-# Return a filtered and paginated collection of owned image snapshots.
+# Return filtered and paginated image snapshots within the authorized scope.
 @api.get('/api/batches/<batch_id>/images')
+@api.get('/api/global/batches/<batch_id>/images')
 def images(batch_id):
     database, _ = services()
     page, limit = integer('page', 1, 1), integer('limit', 20, 1, 50)
@@ -33,29 +34,31 @@ def images(batch_id):
     where = ' AND '.join(conditions)
     order = 'ASC' if request.args.get('sort', 'newest') == 'oldest' else 'DESC'
     with database.connect() as db:
-        own_batch(db, batch_id)
+        access_batch(db, batch_id)
         total = db.execute(f'SELECT count(*) FROM images i WHERE {where}', params).fetchone()[0]
         ids = db.execute(f'SELECT image_id FROM images i WHERE {where} ORDER BY admission_seq {order} LIMIT ? OFFSET ?', (*params, limit, (page - 1) * limit)).fetchall()
-        result = [image_view(db, r['image_id']) for r in ids]
+        result = [image_view(db, r['image_id'], global_scope=g.global_collections) for r in ids]
     return jsonify(images=result, page=page, limit=limit, total=total)
 
 
-# Return an owned image with independent model job results.
+# Return an authorized image with independent model job results.
 @api.get('/api/images/<image_id>')
+@api.get('/api/global/images/<image_id>')
 def image(image_id):
     database, _ = services()
     with database.connect() as db:
-        own_image(db, image_id)
-        result = image_view(db, image_id)
+        access_image(db, image_id)
+        result = image_view(db, image_id, global_scope=g.global_collections)
     return jsonify(image=result)
 
 
-# Serve an owned image thumbnail restricted to private spool storage.
+# Serve an authorized image thumbnail restricted to private spool storage.
 @api.get('/api/images/<image_id>/thumbnail')
+@api.get('/api/global/images/<image_id>/thumbnail')
 def thumbnail(image_id):
     database, cfg = services()
     with database.connect() as db:
-        own_image(db, image_id)
+        access_image(db, image_id)
         row = db.execute('SELECT image_path,input_status FROM images WHERE image_id=?', (image_id,)).fetchone()
         path = Path(row['image_path']).resolve()
     if not path.is_relative_to(cfg.spool.resolve()) or not path.is_file():
@@ -63,10 +66,11 @@ def thumbnail(image_id):
     return send_file(path, mimetype='image/jpeg')
 
 
-# Cancel unfinished jobs for an owned image.
+# Cancel unfinished jobs for an authorized image.
 @api.post('/api/images/<image_id>/cancel')
+@api.post('/api/global/images/<image_id>/cancel')
 def cancel_image(image_id):
     database, cfg = services()
     with database.connect() as db:
-        own_image(db, image_id)
+        access_image(db, image_id)
     return jsonify(cancelled_or_requested=Coordinator(database, cfg).cancel(image_id=image_id))

@@ -11,7 +11,7 @@ const messages = [
   'Small checks, smarter choices. Let’s get to know your fruit.',
   'Keep the whole fruit in the frame and hold your camera steady.',
   'Curious about a result? Your Collections have the full model comparison.',
-  'Every model has its own perspective. Compare all three in Collections.',
+  'Every model has its own perspective. Compare all three in Your Collections.',
   'Your next discovery is one photo away!',
 ];
 

@@ -14,7 +14,7 @@ export function installWatch(context) {
   // Subscribe to replayable collection updates with recovery and removal handling.
   function watchBatch(id, cursor) {
     actions.stopWatch();
-    if (!id || !store.ready || store.page === 'operator') return;
+    if (!id || !store.ready || !['scan', 'collections'].includes(store.page)) return;
     store.watchStop = service.watch(id, {
         cursor: Math.max(store.cursors.get(id) ?? 0, Number(cursor) || 0),
         onEvents: (events, nextCursor) => {

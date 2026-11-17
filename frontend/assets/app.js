@@ -3,6 +3,7 @@ import { createLiveService } from './api/live.js';
 import { readConfig } from './api/config.js';
 import { mountOperator } from './operator/index.js';
 import { createWorkspace } from './workspace/index.js';
+import { createGlobalCollections } from './workspace/global.js';
 import { escapeHtml as e, icon } from './ui.js';
 import { mountExperience, animatePage } from './experience.js';
 import { openDialog } from './motion.js';
@@ -18,7 +19,8 @@ const app = document.querySelector('#app');
 const mark = new URL('./mark.svg', import.meta.url).href;
 const pages = {
   scan: { label: 'Scan workspace', icon: 'scan' },
-  collections: { label: 'Collections', icon: 'folder' },
+  collections: { label: 'Your Collections', icon: 'folder' },
+  global: { label: 'Global Collections', icon: 'layers' },
   operator: { label: 'Operator console', icon: 'tune' },
 };
 const initialPage = params.get('view');
@@ -30,6 +32,7 @@ let readyForReads = false;
 let needsPairing = false;
 let disposeOperator = null;
 let workspace = null;
+let globalCollections = null;
 let notifyTimeout;
 let connectionSequence = 0;
 
@@ -45,7 +48,7 @@ app.innerHTML = `<div class="shell">
       <span><strong>fruispect<span class="brand-dot">.</span></strong><small>FRUIT QUALITY CHECKER</small></span>
     </button>
     <nav aria-label="Main navigation">
-      <div class="nav-group"><p>WORKSPACE</p>${nav('scan')}${nav('collections')}</div>
+      <div class="nav-group"><p>WORKSPACE</p>${nav('scan')}${nav('collections')}<span id="global-navigation"></span></div>
       <div class="nav-group"><p>OPERATIONS</p>${nav('operator')}</div>
     </nav>
     <div class="sidebar-foot">
@@ -65,6 +68,7 @@ app.innerHTML = `<div class="shell">
     <main id="main" tabindex="-1" class="main-content">
       <div id="connection-panel"></div>
       <div id="user-workspace"></div>
+      <div id="global-workspace" hidden></div>
       <div id="operator-workspace" hidden></div>
     </main>
     <footer class="page-footer"><span>Fruispect</span><span>Fruit recognition and visual quality</span></footer>
@@ -83,6 +87,7 @@ app.innerHTML = `<div class="shell">
 const connectionPanel = document.querySelector('#connection-panel');
 const operatorRoot = document.querySelector('#operator-workspace');
 const userRoot = document.querySelector('#user-workspace');
+const globalRoot = document.querySelector('#global-workspace');
 const menuButton = document.querySelector('.mobile-menu');
 const sidebar = document.querySelector('.sidebar');
 const dialog = document.querySelector('#confirm-dialog');
@@ -140,6 +145,7 @@ function showPairing(message = '') {
   needsPairing = true;
   readyForReads = false;
   workspace?.setReady(false);
+  globalCollections?.setReady(false);
   setConnectionIndicator('Pairing required', 'warn');
   connectionPanel.innerHTML = `<div class="callout warn pairing">${icon('phone')}<div><strong>Pair this phone</strong>
     <p>Enter the pairing code displayed on the host computer.</p>
@@ -162,7 +168,7 @@ function showPairing(message = '') {
 
 // Switch workspace views and maintain navigation and operator lifecycle.
 function showPage(next, { focus = true, write = true } = {}) {
-  if (!Object.hasOwn(pages, next)) next = 'scan';
+  if (!Object.hasOwn(pages, next) || next === 'global' && connection && connection.local_operator !== true) next = 'scan';
   const changed = page !== next;
   if (next !== page && page === 'operator') {
     disposeOperator?.();
@@ -180,7 +186,9 @@ function showPage(next, { focus = true, write = true } = {}) {
     if (item.dataset.page === next) item.setAttribute('aria-current', 'page');
     else item.removeAttribute('aria-current');
   }
-  userRoot.hidden = next === 'operator';
+  userRoot.hidden = next === 'operator' || next === 'global';
+  globalRoot.hidden = next !== 'global' || connection?.local_operator !== true;
+  globalCollections?.setVisible(!globalRoot.hidden);
   operatorRoot.hidden = next !== 'operator';
   workspace?.setPage(next);
   if (next === 'operator' && !disposeOperator) {
@@ -194,7 +202,7 @@ function showPage(next, { focus = true, write = true } = {}) {
   }
   if (changed) {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    animatePage(next === 'operator' ? operatorRoot : userRoot.querySelector(next === 'collections' ? '#collections-screen' : '#scan-screen'));
+    animatePage(next === 'operator' ? operatorRoot : next === 'global' ? globalRoot : userRoot.querySelector(next === 'collections' ? '#collections-screen' : '#scan-screen'));
   }
   sidebar.classList.remove('mobile-open');
   menuButton.setAttribute('aria-expanded', 'false');
@@ -207,6 +215,12 @@ async function initialize(code = null, pairedNow = false) {
   try {
     connection = await service.connection();
     if (requestId !== connectionSequence) return;
+    const local = connection.local_operator === true;
+    document.querySelector('#global-navigation').innerHTML = local ? nav('global') : '';
+    if (local && !globalCollections) globalCollections = createGlobalCollections(globalRoot, {
+      service: createLiveService({ globalCollections: true }), config, confirmAction, notify, onPairing: showPairing,
+    });
+    globalCollections?.setReady(false);
     if (code) {
       try { await service.connect(code); }
       catch (error) { showPairing(error.message); showPage(page, { focus: false, write: false }); experience.ready(); return; }
@@ -220,6 +234,7 @@ async function initialize(code = null, pairedNow = false) {
       connectionPanel.replaceChildren();
       setConnectionIndicator('Host connected', 'good');
       workspace.setReady(true);
+      globalCollections?.setReady(connection.local_operator === true);
     }
   } catch (error) {
     if (requestId !== connectionSequence) return;

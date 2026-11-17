@@ -3,11 +3,6 @@ import { ApiError, createHttpClient, downloadName } from "./client.js";
 import { watchBatch } from "./watch.js";
 
 const IMAGE_FILTERS = ["page", "limit", "search", "status", "fruit", "quality", "agreement", "sort"];
-// Encode a collection identifier into its current API path.
-const batchPath = (id) => "/api/batches/" + encodeURIComponent(id);
-// Encode an image identifier into its current API path.
-const imagePath = (id) => "/api/images/" + encodeURIComponent(id);
-
 // Append only populated query parameters to a service path.
 function withQuery(path, values) {
   const query = new URLSearchParams();
@@ -40,7 +35,11 @@ function singular(payload, field) {
 }
 
 // Expose live collection, image, telemetry, and connection operations.
-export function createLiveService({ fetch, EventSource = globalThis.EventSource } = {}) {
+export function createLiveService({ fetch, EventSource = globalThis.EventSource, globalCollections = false } = {}) {
+  const prefix = globalCollections ? '/api/global' : '/api';
+  // Encode collection and image identifiers within the selected access scope.
+  const batchPath = id => prefix + '/batches/' + encodeURIComponent(id);
+  const imagePath = id => prefix + '/images/' + encodeURIComponent(id);
   const request = createHttpClient(fetch);
   // Return the decoded payload from a service request.
   const get = async (path, options) => (await request(path, options)).payload;
@@ -50,7 +49,7 @@ export function createLiveService({ fetch, EventSource = globalThis.EventSource 
   const events = (id, cursor = 0, options) =>
   get(withQuery(batchPath(id) + "/events", { after: cursor }), options);
   // Build the collection SSE endpoint with its replay cursor.
-  const streamUrl = (id, cursor) => withQuery("/api/events", { batch_id: id, after: cursor });
+  const streamUrl = (id, cursor) => withQuery(prefix + "/events", { batch_id: id, after: cursor });
 
   return {
     // Read public connection state and authorized pairing information.
@@ -82,7 +81,7 @@ export function createLiveService({ fetch, EventSource = globalThis.EventSource 
     },
     // Read the most recent collections belonging to this browser.
     async batches(options) {
-      return singular(await get("/api/batches", options), "batches");
+      return singular(await get(prefix + "/batches", options), "batches");
     },
     // Read one owned collection summary and its replay cursor.
     async batch(id, options) {
@@ -129,7 +128,7 @@ export function createLiveService({ fetch, EventSource = globalThis.EventSource 
     },
     // Delete all collections belonging to this browser session.
     deleteCollections(options) {
-      return post("/api/settings/collections/delete", options);
+      return globalCollections ? post("/api/settings/reset", { ...options, json: { confirmation: "RESET" } }) : post("/api/settings/collections/delete", options);
     },
     // Read browser storage counts and authorized host totals.
     settings(options) {
@@ -156,7 +155,7 @@ export function createLiveService({ fetch, EventSource = globalThis.EventSource 
       if (format !== "csv" && format !== "json") {
         throw new ApiError("Choose CSV or JSON to export a collection.", { code: "INVALID_FORMAT" });
       }
-      const path = withQuery("/api/export/" + encodeURIComponent(id), { format });
+      const path = withQuery(prefix + "/export/" + encodeURIComponent(id), { format });
       const { blob, disposition } = await request(path, { ...options, asFile: true });
       const filename = downloadName(disposition, "fruispect-" + encodeURIComponent(id) + "." + format);
       return { blob, filename };

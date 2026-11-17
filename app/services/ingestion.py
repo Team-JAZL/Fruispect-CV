@@ -19,7 +19,7 @@ class AdmissionError(Exception):
 
 
 # Validate and reserve an idempotent image admission before preparing shared pixels.
-def ingest(database, cfg, batch_id, request_key, index, upload):
+def ingest(database, cfg, batch_id, request_key, index, upload, *, source=None):
     started = time.perf_counter()
     cfg.spool.mkdir(parents=True, exist_ok=True)
     token = uuid.uuid4().hex
@@ -102,6 +102,11 @@ def ingest(database, cfg, batch_id, request_key, index, upload):
                 (image_id, batch_id, request_key, index, Path((upload.filename or 'camera.jpg').replace('\\', '/')).name[:200],
                  content_hash, str(thumb), str(canonical), 'PROCESSING', image.width, image.height, reservation,
                  now, now + cfg.retention_hours * 3600, prep_hash)).lastrowid
+            if source:
+                db.execute('''INSERT INTO upload_sources(image_id,device_id,brand,model,platform,browser,
+                    user_agent,remote_address,connection_type) VALUES(?,?,?,?,?,?,?,?,?)''',
+                    (image_id, *(source[key] for key in ('device_id', 'brand', 'model', 'platform', 'browser',
+                        'user_agent', 'remote_address', 'connection_type'))))
             for key in MODELS:
                 db.execute("INSERT INTO model_jobs(job_id,image_id,model_key,admission_seq,status,queued_at) VALUES(?,?,?,?,'WAITING_FOR_INPUT',?)",
                            (uuid.uuid4().hex, image_id, key, seq, now))

@@ -38,6 +38,13 @@ def test_actual_supervisor_pipeline_and_graceful_stop(tmp_path):
                 raise AssertionError('Real model workers did not become ready.')
             report = exercise(client, 3, 120)
             assert report['completed_model_jobs'] == 9 and report['independence_evidence']
+            host = Client(client.base)
+            assert host.request('/api/batches')['batches'] == []
+            images = host.request(f'/api/global/batches/{report["batch_id"]}/images')['images']
+            assert len(images) == 3
+            assert all(image['terminal'] and image['upload_source']['device_id'] for image in images)
+            assert all(job['status'] == 'COMPLETED' and job['result']['predicted_fruit']
+                       for image in images for job in image['jobs'].values())
             with database.connect(write=True) as db:
                 db.execute("INSERT OR REPLACE INTO service_state VALUES('shutdown_requested','1')")
             assert process.wait(timeout=60) == 0

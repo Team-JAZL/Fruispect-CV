@@ -2,5 +2,6 @@
 import './frontend/reconciliation.test.mjs';
 import './frontend/transport.test.mjs';
 import './frontend/workspace.test.mjs';
+import './frontend/collections.test.mjs';
 import './frontend/operator.test.mjs';
 import './frontend/motion.test.mjs';

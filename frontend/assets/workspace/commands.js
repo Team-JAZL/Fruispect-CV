@@ -1,10 +1,10 @@
-// Create, cancel, export, and delete browser-owned collections.
+// Create personal collections and manage collections within their access scope.
 import { saveDownload } from '../ui.js';
 import { makeKey } from './components.js';
 
 // Connect commands behavior to shared state and actions.
 export function installCommands(context) {
-  const { service, confirmAction, notify, onNavigate, state: store, actions } = context;
+  const { service, confirmAction, notify, onNavigate, state: store, actions, globalScope = false } = context;
 
   // Describe removed collections and deferred spool-file cleanup.
   function describeDeletion(result) {
@@ -43,8 +43,9 @@ export function installCommands(context) {
         actions.refreshImage(store.selectedId);
       } else {
         const all = action === 'delete-all';
-        if (!await confirmAction({ title: all ? 'Delete your collections?' : 'Delete this collection?',
-              body: 'This removes photos and results from the selected browser-session history.', label: 'Delete' })) return;
+        if (!await confirmAction({ title: all ? (globalScope ? 'Delete all global collections?' : 'Delete your collections?') : 'Delete this collection?',
+              body: globalScope ? 'This removes the selected photos and results from the host and their owners’ collections.' : 'This removes photos and results from the selected browser-session history.',
+              label: 'Delete', requireText: globalScope && all ? 'RESET' : '' })) return;
         const result = all ? await service.deleteCollections() : await service.deleteBatch(id);
         if (all || store.batchId === id) {
           if (store.batchId) actions.forgetCollection(store.batchId, '');

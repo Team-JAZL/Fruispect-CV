@@ -36,12 +36,20 @@ root.innerHTML = `
         <section id="inspection-panel" class="card inspection-panel" aria-label="Current check"></section>
       </div>
     </section>
-    <section id="collections-screen" hidden aria-labelledby="collections-title">
-      <header class="page-heading" data-reveal><div><h1 id="collections-title">Collections</h1><p>Your photos, ready to revisit.</p></div><button class="button primary" type="button" data-action="new-batch" aria-label="New collection">${icon('plus', 18)} <span class="button-label">New</span></button></header>
+    ${collectionLayout({ retentionHours })}
+    <p class="sr-only" id="scan-announcement" aria-live="polite" aria-atomic="true"></p>`;
+}
+
+// Render matching collection pages with unique IDs for each access scope.
+export function collectionLayout({ retentionHours, globalScope = false }) {
+  const id = name => globalScope ? `global-${name}` : name;
+  return `
+    <section id="${id('collections-screen')}" ${globalScope ? '' : 'hidden'} aria-labelledby="${id('collections-title')}">
+      <header class="page-heading" data-reveal><div><h1 id="${id('collections-title')}">${globalScope ? 'Global Collections' : 'Your Collections'}</h1><p>${globalScope ? 'Scans from every device, including disconnected devices.' : 'Your photos, ready to revisit.'}</p></div><div class="collection-actions">${globalScope ? '' : `<button class="button primary" type="button" data-action="new-batch" aria-label="New collection">${icon('plus', 18)} <span class="button-label">New</span></button>`}<button class="button" type="button" data-action="refresh-collections">${icon('refresh', 16)} Refresh</button></div></header>
       <div class="collections-grid">
-        <section class="card collection-sidebar" data-reveal><div class="panel-header"><span class="tile-icon green">${icon('folder', 18)}</span><div><h2>Your collections</h2><p>All retained scans in this browser</p></div></div><div id="batch-list"></div><p class="retention-note">Saved for about ${retentionHours} hours. Export to keep a copy. Clearing cookies removes access.</p><div id="collection-delete"></div></section>
-        <section class="card collection-content" data-reveal><div id="collection-heading"></div>
-          <form id="collection-filter" hidden aria-label="Photo filters">
+        <section class="card collection-sidebar" data-reveal><div class="panel-header"><span class="tile-icon green">${icon('folder', 18)}</span><div><h2>${globalScope ? 'All devices' : 'Your collections'}</h2><p>${globalScope ? 'All retained scans on this host' : 'All retained scans in this browser'}</p></div></div><div id="${id('batch-list')}" class="batch-list"></div><p class="retention-note">Saved for about ${retentionHours} hours. Export to keep a copy. ${globalScope ? 'Deleting a scan removes it for its owner too.' : 'Clearing cookies removes access.'}</p><div id="${id('collection-delete')}"></div></section>
+        <section class="card collection-content" data-reveal><div id="${id('collection-heading')}"></div>
+          <form id="${id('collection-filter')}" class="collection-filter" hidden aria-label="Photo filters">
             <label class="filter-search">${icon('search', 16)}<span class="sr-only">Search filename</span><input name="search" type="search" placeholder="Search filename"></label>
             <label><span class="sr-only">Sort by</span><select name="sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label>
             <details class="filters"><summary>Filters</summary><div>
@@ -51,14 +59,14 @@ root.innerHTML = `
               <label>Comparison<select name="agreement"><option value="">Any comparison</option><option value="agreement">Agreement</option><option value="disagreement">Disagreement</option></select></label>
             </div></details>
           </form>
-          <div id="collection-notice"></div><div id="collection-list"></div>
+          <div id="${id('collection-notice')}"></div><div id="${id('collection-list')}"></div>
         </section>
       </div>
     </section>
-    <dialog id="result-dialog" class="result-dialog" aria-labelledby="review-title" aria-describedby="review-description">
-      <header class="review-header" data-reveal><div><span class="eyebrow">COLLECTION REVIEW</span><h2 id="review-title">Model results</h2><p id="review-description">Three independent checks of your fruit photo.</p></div>
+    <dialog id="${id('result-dialog')}" class="result-dialog" aria-labelledby="${id('review-title')}" aria-describedby="${id('review-description')}">
+      <header class="review-header" data-reveal><div><span class="eyebrow">COLLECTION REVIEW</span><h2 id="${id('review-title')}">Model results</h2><p id="${id('review-description')}">Three independent checks of your fruit photo.</p></div>
         <button type="button" class="icon-button" data-action="close-review" aria-label="Close results" autofocus>${icon('close', 21)}</button></header>
-      <div id="review-content"></div>
+      <div id="${id('review-content')}" class="review-content"></div>
     </dialog>
-    <p class="sr-only" id="scan-announcement" aria-live="polite" aria-atomic="true"></p>`;
+`;
 }

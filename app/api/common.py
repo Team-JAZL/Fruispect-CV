@@ -1,5 +1,5 @@
 # Share API service access, ownership checks, and upload exclusion.
-from flask import abort, current_app, request, session
+from flask import abort, current_app, g, request, session
 from contextlib import contextmanager
 
 
@@ -14,12 +14,20 @@ def own_batch(db, batch_id):
         abort(404, 'Batch is unavailable, expired, or belongs to another browser session.')
 
 
-# Require the requested image to belong to this browser session.
-def own_image(db, image_id):
+# Authorize collection reads and commands within the request's protected scope.
+def access_batch(db, batch_id):
+    if not g.global_collections:
+        own_batch(db, batch_id)
+    elif not db.execute('SELECT 1 FROM batches WHERE batch_id=?', (batch_id,)).fetchone():
+        abort(404, 'Collection is unavailable or expired.')
+
+
+# Authorize image access within the request's protected collection scope.
+def access_image(db, image_id):
     row = db.execute('SELECT batch_id FROM images WHERE image_id=?', (image_id,)).fetchone()
     if not row:
         abort(404)
-    own_batch(db, row['batch_id'])
+    access_batch(db, row['batch_id'])
 
 
 # Parse and bound an integer query parameter.

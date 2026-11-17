@@ -1,19 +1,21 @@
 # Verification
 
-Repository cleanup checked on **16 November 2026 (Asia/Singapore)** using Windows 11, Python 3.14.5, CPU PyTorch 2.13.0, and Node 22.17.1.
+Global Collections checked on **18 November 2026 (Asia/Singapore)** on Windows using the repository Python environment, CPU checkpoints, Node, and an isolated headless Edge browser.
 
 ## Current checks
 
 | Check | Result |
 | --- | --- |
-| Python regression suite | 56 tests; API access, ownership, admission, FIFO, leases, cancellation, retention, reset, tunnel lifecycle, real model parity, and real supervisor pipeline |
-| Frontend tests | 11 passing tests for event replay, versioned snapshots, upload retries and selection, camera cleanup, operator reads, and research formatting |
+| Python regression suite | 75 passing tests; host-only global access, session isolation, durable device attribution, idempotency, scoped deletion, FIFO, leases, retention, reset, tunnel lifecycle, real model parity, and real supervisor pipeline |
+| Frontend tests | 25 passing tests; scoped transport, gallery IDs and source escaping, stale discovery, isolated selection, event replay, uploads, camera cleanup, operator reads, motion, and research formatting |
 | Frontend asset integration | Flask serves every imported JavaScript module, stylesheet dependency, and local image; path traversal is rejected |
-| Browser smoke | Real upload produced three checkpoint results; collection navigation, all five Operator tabs, confirmed reset, and cleanup passed |
-| Browser resources | No uncaught exceptions or failed resource responses in the smoke workflow |
-| Artifact audit | All three checkpoints load strictly; logit and probability differences from the reference helper are 0.0 across three deterministic fixtures per model |
+| Global Collections browser smoke | Host-only navigation, retained device thumbnails, result/source dialogs, automatic discovery of another upload, personal isolation, remote direct-link/API denial, and desktop/390px layouts passed |
+| Browser exceptions | No uncaught exceptions in the Global Collections workflow |
+| Retained artifact audit (16 November) | All three checkpoints load strictly; logit and probability differences from the reference helper are 0.0 across three deterministic fixtures per model |
 
-The browser smoke used a disposable private instance with ngrok disabled. Its reset affected only that test instance. [Browser evidence](evidence/browser-smoke.json) records the checked workflows. [Artifact evidence](evidence/artifact-audit.json) records the current inventory and model metadata.
+The [Global Collections browser evidence](evidence/global-collections-smoke.json) uses a disposable instance with ngrok disabled and separate browser sessions. Screenshots were inspected at 1440px and 390px widths. The new API tests cover paired HTTPS tunnel denial and source reporting, restart/disconnection persistence, and shared retention. The supervisor test also reads all nine real checkpoint results through a fresh host session's Global Collections API.
+
+[Earlier browser evidence](evidence/browser-smoke.json) records the original real-upload, Operator tab, reset, and cleanup workflow. [Artifact evidence](evidence/artifact-audit.json) records the retained inventory and model metadata.
 
 ## Reproduce
 

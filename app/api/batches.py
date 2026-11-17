@@ -1,13 +1,14 @@
 # Create, inspect, upload to, cancel, and delete browser collections.
 import time
 import uuid
-from flask import abort, current_app, jsonify, request, session
+from flask import abort, current_app, g, jsonify, request, session
+from app.services.devices import upload_source
 from app.services.cleanup import delete_collections
 from app.services.ingestion import ingest, AdmissionError
 from app.queue.coordinator import Coordinator
 from app.services.views import batch_view
 from app.api import api
-from app.api.common import services, own_batch, exclusive_uploads
+from app.api.common import services, own_batch, access_batch, exclusive_uploads
 
 
 # Create or reuse an idempotent collection for this browser.
@@ -26,21 +27,24 @@ def create_batch():
     return jsonify(batch=result), 202
 
 
-# Return all retained collections owned by this browser.
+# Return retained collections within the personal or protected host scope.
 @api.get('/api/batches')
+@api.get('/api/global/batches')
 def batches():
     database, _ = services()
     with database.connect() as db:
-        rows = [batch_view(db, r[0]) for r in db.execute('SELECT batch_id FROM batches WHERE session_id=? ORDER BY created_at DESC, batch_id DESC', (session['sid'],)).fetchall()]
+        where, params = ('1=1', ()) if g.global_collections else ('session_id=?', (session['sid'],))
+        rows = [batch_view(db, r[0]) for r in db.execute(f'SELECT batch_id FROM batches WHERE {where} ORDER BY created_at DESC, batch_id DESC', params).fetchall()]
     return jsonify(batches=rows)
 
 
-# Return the requested browser-owned collection summary.
+# Return a collection summary after checking its access scope.
 @api.get('/api/batches/<batch_id>')
+@api.get('/api/global/batches/<batch_id>')
 def batch(batch_id):
     database, _ = services()
     with database.connect() as db:
-        own_batch(db, batch_id)
+        access_batch(db, batch_id)
         result = batch_view(db, batch_id)
     return jsonify(batch=result)
 
@@ -70,9 +74,10 @@ def submit(batch_id):
         except ValueError:
             abort(400, 'offset must be a nonnegative integer.')
         accepted, rejected = [], []
+        source = upload_source()
         for index, file in enumerate(files, offset):
             try:
-                accepted.append(ingest(database, cfg, batch_id, key, index, file))
+                accepted.append(ingest(database, cfg, batch_id, key, index, file, source=source))
             except AdmissionError as exc:
                 rejected.append({'file_index': index, 'filename': file.filename, 'code': exc.code, 'message': exc.message, 'http_status': exc.status})
                 with database.connect(write=True) as db:
@@ -83,21 +88,23 @@ def submit(batch_id):
         gate.release()
 
 
-# Cancel unfinished jobs in an owned collection.
+# Cancel unfinished jobs in an authorized collection.
 @api.post('/api/batches/<batch_id>/cancel')
+@api.post('/api/global/batches/<batch_id>/cancel')
 def cancel_batch(batch_id):
     database, cfg = services()
     with database.connect() as db:
-        own_batch(db, batch_id)
+        access_batch(db, batch_id)
     return jsonify(cancelled_or_requested=Coordinator(database, cfg).cancel(batch_id=batch_id))
 
 
-# Delete one owned collection while excluding concurrent uploads.
+# Delete one authorized collection while excluding concurrent uploads.
 @api.post('/api/batches/<batch_id>/delete')
+@api.post('/api/global/batches/<batch_id>/delete')
 def delete_batch(batch_id):
     database, cfg = services()
     with exclusive_uploads():
         with database.connect() as db:
-            own_batch(db, batch_id)
-        deleted = delete_collections(database, cfg, session_id=session['sid'], batch_id=batch_id)
+            access_batch(db, batch_id)
+        deleted = delete_collections(database, cfg, session_id=None if g.global_collections else session['sid'], batch_id=batch_id)
     return jsonify(deleted=deleted)

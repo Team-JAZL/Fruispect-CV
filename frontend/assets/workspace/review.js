@@ -3,9 +3,10 @@ import { MODELS } from '../api/contracts.js';
 import { icon, escapeHtml as e, formatDate, preserveFocus } from '../ui.js';
 import { thumbnail, resultCard, agreement, callout } from './components.js';
 import { animatePage, openDialog } from '../motion.js';
+import { sourceDetails } from './device.js';
 
 // Connect collection review without changing the scan workspace selection.
-export function installReview({ state: store, actions, $ }) {
+export function installReview({ state: store, actions, $, globalScope = false }) {
   const dialog = $('result-dialog');
   let opener = null;
 
@@ -19,6 +20,7 @@ export function installReview({ state: store, actions, $ }) {
       ${image ? `<div class="review-photo" data-reveal>${thumbnail(image, 'review-thumb')}<div><h3>${e(image.original_filename || 'Fruit photo')}</h3><p>${e(formatDate(image.received_at))}${image.width && image.height ? ` · ${Number(image.width)} × ${Number(image.height)}` : ''}</p><p>${e(agreement(image))}</p></div></div>
         ${image.input_error ? callout(typeof image.input_error === 'string' ? image.input_error : image.input_error.message ?? 'Photo preparation failed.') : ''}
         ${store.streamStatus ? callout(store.streamStatus, 'neutral') : ''}
+        ${globalScope ? sourceDetails(image.upload_source) : ''}
         <div class="model-grid">${MODELS.map(model => resultCard(model, image.jobs?.[model.key], store.reviewId)).join('')}</div>
         <p class="confidence-note">${icon('info', 16)} Confidence is a model score, not a guarantee. Visual quality does not establish food safety.</p>`
       : store.reviewLoading ? '<div class="empty" role="status"><span class="pulse" aria-hidden="true"></span><p>Loading your results…</p></div>' : ''}`);
@@ -39,7 +41,7 @@ export function installReview({ state: store, actions, $ }) {
     opener = null;
   }
 
-  // Open an owned photo for review while remaining in Collections.
+  // Open an authorized photo for review without leaving its collection gallery.
   async function openReview(id, trigger = null) {
     if (!id) return;
     if (!dialog.open) opener = trigger;

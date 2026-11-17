@@ -42,7 +42,7 @@ def delete_collections(database, cfg, *, session_id=None, batch_id=None):
                     if value:
                         db.execute('INSERT OR IGNORE INTO file_deletions VALUES(?)', (value,))
             db.execute('DELETE FROM batches WHERE batch_id=?', (ident,))
-        if session_id is None:
+        if session_id is None and batch_id is None:
             db.execute("DELETE FROM sqlite_sequence WHERE name IN ('images','events')")
             db.execute("UPDATE model_registry SET last_error=NULL WHERE state='READY'")
 

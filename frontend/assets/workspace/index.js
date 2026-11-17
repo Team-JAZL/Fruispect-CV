@@ -9,6 +9,8 @@ import { installRender } from './render.js';
 import { installUpload } from './upload.js';
 import { installCommands } from './commands.js';
 import { installReview } from './review.js';
+import { installCollectionRender } from './collection-render.js';
+import { installCollectionEvents } from './collection-events.js';
 
 // Create workspace for the current browser session.
 export function createWorkspace(root, { service, config, confirmAction, notify, onPairing, onNavigate }) {
@@ -32,9 +34,11 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
   installCollections(context);
   installWatch(context);
   installRender(context);
+  installCollectionRender(context);
   installUpload(context);
   installCommands(context);
   installReview(context);
+  installCollectionEvents(context);
   for (const [id, many] of [['photo-input', false], ['device-input', false], ['batch-input', true], ['folder-input', true]]) {
     $(id).onchange = event => {
       actions.addFiles(event.target.files, many);
@@ -52,7 +56,7 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
       }
       const actionButton = event.target.closest('[data-action]');
       if (!actionButton) return;
-      const { action, key, id } = actionButton.dataset;
+      const { action, key } = actionButton.dataset;
       if (action === 'browse-photo') $('photo-input').click();
 
       else if (action === 'browse-batch') $('batch-input').click();
@@ -75,30 +79,9 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
       } else if (action === 'files-prev' || action === 'files-next') {
         store.selectionPage += action === 'files-prev' ? -1 : 1;
         actions.renderIntakeState();
-      } else if (action === 'select-batch') {
-        if (!store.uploadBusy) actions.chooseBatch(id);
-      }
-      else if (action === 'new-batch') actions.createCollection();
-      else if (action === 'open-image') {
-        actions.openReview(id, actionButton);
-      } else if (action === 'close-review') actions.closeReview();
-      else if (action === 'retry-review') actions.openReview(store.reviewId);
-      else if (action === 'refresh-collections') {
-        store.collectionNotice = '';
-        actions.refreshBatches();
-        actions.refreshList();
-      } else if (action === 'prev' || action === 'next') {
-        store.listQuery.page += action === 'prev' ? -1 : 1;
-        actions.refreshList();
-      } else if (action === 'cancel-image') actions.cancelImage();
-      else actions.collectionAction(action);
+      } else if (action === 'new-batch') actions.createCollection();
+      else if (action === 'cancel-image') actions.cancelImage();
     });
-  form.onchange = event => { if (event.target.name !== 'search') actions.filtersChanged(); };
-  form.onsubmit = event => { event.preventDefault(); actions.filtersChanged(); };
-  form.querySelector('[name="search"]').oninput = () => {
-    clearTimeout(store.searchTimer);
-    store.searchTimer = setTimeout(actions.filtersChanged, 250);
-  };
   document.addEventListener('paste', event => {
       if (store.page !== 'scan' || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target?.tagName)) return;
       const images = [...(event.clipboardData?.files ?? [])].filter(file => file.type.startsWith('image/'));
@@ -145,8 +128,8 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
       $('scan-screen').hidden = next !== 'scan';
       $('collections-screen').hidden = next !== 'collections';
       if (next !== 'scan') actions.stopCamera();
-      if (next === 'operator') actions.stopWatch();
-      else if (previous === 'operator' && store.batchId && store.ready) actions.watchBatch(store.batchId, store.activeBatch?.event_cursor ?? 0);
+      if (next === 'operator' || next === 'global') actions.stopWatch();
+      else if (['operator', 'global'].includes(previous) && store.batchId && store.ready) actions.watchBatch(store.batchId, store.activeBatch?.event_cursor ?? 0);
       if (next === 'collections' && store.ready) {
         actions.refreshBatches({ quiet: true });
         actions.refreshList({ quiet: true });

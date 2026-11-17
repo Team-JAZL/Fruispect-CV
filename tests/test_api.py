@@ -20,6 +20,8 @@ def test_collection_history_includes_more_than_thirty_owned_batches(client, app)
     assert {item['batch_id'] for item in history} == set(owned)
     assert other not in {item['batch_id'] for item in history}
     assert history[0]['batch_id'] == owned[-1]
+    global_history = client.get('/api/global/batches').get_json()['batches']
+    assert {item['batch_id'] for item in global_history} == {*owned, other}
 
 
 # Verify batch integrity and replay.

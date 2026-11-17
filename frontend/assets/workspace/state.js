@@ -1,15 +1,12 @@
 // Create isolated state for input, camera, collections, and upload workflows.
 import { makeKey } from './components.js';
 
-// Create workspace state for the current browser session.
-export function createWorkspaceState() {
+// Create independent gallery state for personal or host collection access.
+export function createCollectionState() {
   return {
-    page: 'scan',
-    inputMode: 'photo',
+    page: 'collections',
     ready: false,
     started: false,
-    selected: [],
-    selectionPage: 1,
     batchId: null,
     selectedId: null,
     reviewId: null,
@@ -23,19 +20,32 @@ export function createWorkspaceState() {
     collectionLoading: false,
     collectionNotice: '',
     listSequence: 0,
+    batchesSequence: 0,
     userNotice: '',
-    uploadStatus: '',
-    completedAdmission: null,
     uploadBusy: false,
-    newBatchKey: makeKey(),
     uploadGroup: null,
-    retryAt: 0,
     cursors: new Map(),
     streamStatus: '',
     watchStop: undefined,
     refreshTimer: undefined,
     eventImages: new Set(),
     cache: new Map(),
+    searchTimer: undefined,
+  };
+}
+
+// Extend personal collections with scan intake, uploads, and camera state.
+export function createWorkspaceState() {
+  return {
+    ...createCollectionState(),
+    page: 'scan',
+    inputMode: 'photo',
+    selected: [],
+    selectionPage: 1,
+    uploadStatus: '',
+    completedAdmission: null,
+    newBatchKey: makeKey(),
+    retryAt: 0,
     cameraStream: null,
     captureBusy: false,
     cameraSequence: 0,
@@ -45,6 +55,5 @@ export function createWorkspaceState() {
     autoTimer: undefined,
     lastDeviceError: '',
     lastLiveAnnouncement: '',
-    searchTimer: undefined
   };
 }

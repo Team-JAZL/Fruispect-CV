@@ -25,6 +25,9 @@ def register_security(app, cfg):
         g.via_tunnel = (g.tunnel_state.get('status') == 'ready' and request.is_secure
                         and request.remote_addr in ('127.0.0.1', '::1')
                         and request.host.lower() == urlsplit(g.tunnel_state.get('public_url', '')).netloc.lower())
+        g.global_collections = request.path.startswith('/api/global/')
+        if g.global_collections and not g.local_operator:
+            return jsonify(error={'code': 'LOCAL_ONLY', 'message': 'Open Global Collections on the host using localhost.'}), 403
         if not cfg.allow_lan and not g.local_operator and not g.via_tunnel:
             return jsonify(error={'code': 'HOST_DENIED', 'message': 'Open localhost or the current phone link from your computer.'}), 403
         if cfg.access_token:
@@ -46,5 +49,6 @@ def register_security(app, cfg):
     @app.after_request
     def headers(response):
         response.headers.update({'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin',
+            'Accept-CH': 'Sec-CH-UA-Model, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version',
             'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'self'; img-src 'self' blob: data:; media-src 'self' blob:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'"})
         return response

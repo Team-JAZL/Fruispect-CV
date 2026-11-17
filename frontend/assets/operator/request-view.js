@@ -97,7 +97,7 @@ export function requestsView(request, batches, busy, cleared) {
     <div class="fo-requests-grid">
       <aside class="fo-requests-aside">
         <section data-reveal class="fo-card fo-collection-list">
-          ${sectionHead('Collections', 'Owned by this browser session.')}
+          ${sectionHead('Your Collections', 'Owned by this browser session.')}
           <div data-slot="collections">${batchList(batches, request?.id)}</div>
         </section>
         ${request ? `<section data-reveal class="fo-card fo-photos">

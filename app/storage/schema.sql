@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS model_jobs(
     UNIQUE(image_id,model_key));
 CREATE INDEX IF NOT EXISTS jobs_lane ON model_jobs(model_key,admission_seq,status);
 CREATE INDEX IF NOT EXISTS images_batch ON images(batch_id,admission_seq);
+CREATE TABLE IF NOT EXISTS upload_sources(
+    image_id TEXT PRIMARY KEY REFERENCES images(image_id) ON DELETE CASCADE,
+    device_id TEXT NOT NULL, brand TEXT, model TEXT, platform TEXT, browser TEXT,
+    user_agent TEXT NOT NULL, remote_address TEXT, connection_type TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS model_registry(
     model_key TEXT PRIMARY KEY, display_name TEXT NOT NULL, checkpoint_path TEXT,
     checkpoint_sha256 TEXT, preprocessing_sha256 TEXT, device TEXT, state TEXT NOT NULL,

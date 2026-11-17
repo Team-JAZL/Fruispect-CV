@@ -24,6 +24,10 @@ Flask renders `app/templates/fruispect.html` with configured input limits and re
 
 Research views use original CSV model names and figure catalog paths. Operator request inspection covers this browser's collections. See [frontend source map](../frontend/README.md) and [configuration](CONFIGURATION.md).
 
+Your Collections retains session ownership. Global Collections mounts only on the direct localhost host and uses independent gallery state with the same rendering, filters, result dialogs, commands, and event replay. Its discovery loop refreshes all retained collection summaries every five seconds while visible, including work from disconnected devices. The two views reference the same scans and share retention and deletion behavior.
+
+Each admitted HTTP upload atomically saves an `upload_sources` row alongside its image and jobs. A keyed hash of the browser session supplies a stable, non-authenticating device ID without disclosing the session credential. Available model, inferred manufacturer, platform, browser, bounded user agent, connection type, and direct peer address are recorded at admission; idempotent retries preserve the original record. [User-Agent Client Hints](https://developer.chrome.com/docs/privacy-security/user-agent-client-hints) request optional model/platform details; unsupported or withheld fields remain unknown. MAC addresses are inaccessible to this web application. Tunnel uploads record no phone IP because the peer is the proxy, and forwarded client claims are not trusted. Reports cannot verify physical devices or people. Source metadata is returned only by host-scoped image and export routes and cascades away with the image. Existing scans have no retroactively inferred source.
+
 ## Optional phone access
 
 The supervisor discovers a local ngrok executable, launches a hidden child process without a shell, and consumes its structured JSON endpoint logs. The real HTTPS origin is published to `service_state` with a short renewable expiry. This startup is independent of worker queues. Missing/failed/unconfigured ngrok leaves localhost operating; no tunnel is downloaded or account configuration changed. The supervisor stops only its own tunnel process.
@@ -97,8 +101,17 @@ Errors: `{"error":{"code":"...","message":"..."}}`. Per-file errors appear in th
 | GET `/api/evaluation/figures` | Verified catalog; missing paths null |
 | GET `/api/evaluation/artifact/figures/:file` | Controlled PNG/PDF access |
 | GET `/api/export/:batch_id?format=csv` | Streaming CSV/JSON observations |
+| GET `/api/global/batches` | Localhost only; all retained collections across devices |
+| GET `/api/global/batches/:id`, `/api/global/batches/:id/images` | Global collection summary and the same filtered/paginated image snapshots |
+| GET `/api/global/images/:id`, `/api/global/images/:id/thumbnail` | Global image results, source attribution, and protected thumbnail |
+| GET `/api/global/events`, `/api/global/batches/:id/events` | Global collection SSE/polling replay with the same cursors and limits |
+| GET `/api/global/export/:id?format=csv` | Global CSV/JSON observations with `upload_` source columns |
+| POST `/api/global/batches/:id/cancel`, `/api/global/images/:id/cancel` | Host cancellation of unfinished checks across devices |
+| POST `/api/global/batches/:id/delete` | Delete one global collection and its owner's scan data |
 
 Image query filters: search, status, fruit, quality, agreement=agreement/disagreement, sort=oldest/newest (default newest). View sorting never changes FIFO. Fruit/quality filters match any successful model. TERMINAL means every corresponding job is terminal. Three-model agreement requires all three successes.
+
+Every `/api/global/` request is rejected before data access unless both the HTTP hostname and peer identify direct localhost access. Pairing a tunnel device, enabling LAN access, or supplying forwarded headers does not grant global access. Personal endpoints continue enforcing session ownership even for the host. Global bulk deletion uses the existing localhost-only reset endpoint and requires the UI confirmation text `RESET`.
 
 Ingestion returns `{accepted:[{file_index,image_id,admission_seq,duplicate}],rejected:[{file_index,filename,code,message,http_status}]}`. Partial acceptance returns 202. Full rejection uses the applicable 4xx/503. Capacity backpressure is 429/503 and `Retry-After: 2`. Browser submits one file/request with stable keys; byte/pixel/batch/queue/spool/upload-slot limits bound resource use.
 

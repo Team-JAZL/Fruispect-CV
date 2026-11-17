@@ -13,6 +13,9 @@ Run `main.py` from the repository root and open **http://127.0.0.1:5000**. Flask
 | `state/requests.js` | Event cursors and version-aware snapshot reconciliation |
 | `workspace/` | File intake, camera capture, uploads, collections, rendering, and commands |
 | `workspace/review.js` | Responsive collection result dialog with independent selection and focus restoration |
+| `workspace/global.js` | Host gallery lifecycle and discovery of collections from other devices |
+| `workspace/collection-*.js` | Shared gallery rendering and event bindings for both collection scopes |
+| `workspace/device.js` | Host-only upload attribution and reporting limits |
 | `operator/` | Telemetry, owned requests, research, settings, reads, and commands |
 | `ui.js` | Safe markup, icons, formatting, downloads, and focus preservation |
 | `css/workspace/`, `css/operator/` | Base styles, feature layouts, and responsive rules |
@@ -22,7 +25,7 @@ Each feature's `index.js` creates its own state, installs focused controllers, a
 
 Mark primary entrance groups with `data-reveal`. Navigation animates visible groups in reading order with a short, bounded stagger; ordinary telemetry refreshes keep their layout steady. Modal controllers use `openDialog` to preserve native focus and Escape behavior. Reduced motion bypasses these entrance effects.
 
-The browser uses only the current live API. Research views read saved artifacts; inference views read actual worker results. Request inspection covers collections owned by the current browser. Host-wide scan reset and phone retry remain restricted by the server to localhost.
+The browser uses only the current live API. Research views read saved artifacts; inference views read actual worker results. Your Collections and Operator request inspection cover collections owned by the current browser. Global Collections is mounted only after the server identifies direct localhost access, uses a separate state/cache and `/api/global/` service scope, and discovers new device collections every five seconds while visible. Both galleries share layouts, filters, review dialogs, event replay, and commands. Host-wide scan reset and phone retry remain restricted by the server to localhost.
 
 ## Verify changes
 

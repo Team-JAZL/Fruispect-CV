@@ -25,7 +25,7 @@ export function installCollections(context) {
     const requestBatch = store.batchId;
     try {
       const image = await service.image(id);
-      if (requestBatch !== store.batchId || !image) return;
+      if (!store.ready || requestBatch !== store.batchId || !image) return;
       actions.remember(image);
       if (id === store.selectedId) actions.renderResults();
       if (id === store.reviewId) actions.renderReview();
@@ -42,10 +42,14 @@ export function installCollections(context) {
   // Refresh batches from the current service snapshots.
   async function refreshBatches({ quiet = false } = {}) {
     if (!store.ready) return;
+    const sequence = ++store.batchesSequence;
     try {
-      store.batches = await service.batches();
+      const batches = await service.batches();
+      if (!store.ready || sequence !== store.batchesSequence) return;
+      store.batches = batches;
       actions.renderCollections();
     } catch (error) {
+      if (!store.ready || sequence !== store.batchesSequence) return;
       if (!quiet) actions.showError(error, 'collection');
       else if (error.status === 401) onPairing(error.message);
     }

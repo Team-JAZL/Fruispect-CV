@@ -23,10 +23,13 @@ Stop with **Ctrl+C**, or run `.venv/Scripts/python.exe -m scripts.stop` from ano
 
 1. Choose Photo, Batch, or Camera, review your inputs, then select **Check fruit**.
 2. See each model's fruit, visual quality, and confidence directly in **Current check** as results arrive.
-3. Open **Collections** to review photos in a result dialog with per-class confidence bars, or filter, cancel, export, and delete scans. Reviewing a photo keeps you in Collections and preserves the current scan selection.
+3. Open **Your Collections** to review this browser's photos and model results, or filter, cancel, export, and delete scans. Reviewing a photo preserves the current scan selection.
 4. Open **Operator console** for readiness, FIFO queues, owned request details, research, connection settings, and localhost reset controls.
+5. On the host, open **Global Collections** to review retained scans from every browser and device, including disconnected devices. The host can filter, review, export, cancel, and delete these collections. This tab and its API require direct localhost access.
 
 Collections belong to browser sessions and are normally retained for 24 hours. Clearing cookies removes access to that session's history. Export anything needed before deleting or resetting scans.
+
+Global Collections uses the same retained scans, so disconnecting a phone or clearing its cookies does not remove its scans from the host. Deletion or retention expiry removes them from both views. New uploads record a browser-session device ID, available model/brand, operating system, browser, connection type, and upload time. Device reports are not verified hardware or personal identity. Browsers cannot provide MAC addresses; these are shown as unavailable. Tunnel connections do not expose a trustworthy phone IP, so their network address is also unavailable. Earlier scans remain reviewable without invented device information.
 
 All retained collections are available without a count cap. Camera mode opens a large preview with a shutter button; on phones it fills the screen. A brief robot welcome, gentle page transitions, and a tappable helper accompany the workspace. Reduced-motion preferences are respected, and presentation animations never delay model inference.
 
