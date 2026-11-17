@@ -1,6 +1,7 @@
 // Validate file selection and render photo, batch, and camera intake controls.
 import { icon, escapeHtml as e, preserveFocus } from '../ui.js';
 import { makeKey, FILES_PER_PAGE, badge, callout } from './components.js';
+import { animatePage } from '../motion.js';
 
 // Connect intake behavior to shared state and actions.
 export function installIntake(context) {
@@ -28,27 +29,29 @@ export function installIntake(context) {
     }
     if (camera) {
       intake.innerHTML = `<div class="camera-box">
-        <video id="camera-video" playsinline autoplay muted hidden aria-label="Live camera preview"></video>
         <div id="camera-placeholder"><span class="upload-icon">${icon('camera', 23)}</span><strong>Use your camera</strong><p>Frame one fruit, then capture a still photo.</p></div>
       </div>
-      <div class="camera-actions"><button class="button small" type="button" data-action="start-camera">Start camera</button>
-      <button class="button small" type="button" data-action="stop-camera" hidden>Stop</button>
-      <button class="button primary small" type="button" data-action="capture" hidden>Take photo</button>
-      <button class="button small" type="button" data-action="device-camera">Device camera</button>
-      <button class="button small" type="button" data-action="browse-photo">Choose file</button></div>
-      <div class="camera-options"><label id="camera-picker" hidden>Camera <select id="camera-select"></select></label>
-      <label id="auto-option" hidden><input type="checkbox" id="auto-capture"> Auto-capture every ${(limits.autoCaptureIntervalMs ?? 5000) / 1000} seconds</label></div>`;
+      <div class="camera-actions"><button class="button primary" type="button" data-action="start-camera">${icon('camera', 18)}<span>Open camera</span></button>
+      <button class="icon-button" type="button" data-action="device-camera" aria-label="Use device camera" title="Use device camera">${icon('phone', 19)}</button>
+      <button class="icon-button" type="button" data-action="browse-photo" aria-label="Choose a photo" title="Choose a photo">${icon('folder', 19)}</button></div>
+      <dialog id="camera-view" class="camera-view" aria-labelledby="camera-title">
+      <header class="camera-header" data-reveal><h2 id="camera-title">Frame one fruit</h2><button class="icon-button" type="button" data-action="stop-camera" aria-label="Close camera">${icon('close', 21)}</button></header>
+      <div class="camera-stage" data-reveal><video id="camera-video" playsinline autoplay muted aria-label="Live camera preview"></video><span class="camera-guide" aria-hidden="true"></span></div>
+      <div class="camera-shutter-row" data-reveal><span class="camera-hint">Keep it steady</span><button class="shutter-button" type="button" data-action="capture" aria-label="Take photo" title="Take photo"><span></span></button><span class="camera-hint">Tap to capture</span></div>
+      <div class="camera-options" data-reveal><label id="camera-picker" hidden>Camera <select id="camera-select"></select></label>
+      <details><summary>Auto-capture</summary><label id="auto-option" hidden><input type="checkbox" id="auto-capture"> Every ${(limits.autoCaptureIntervalMs ?? 5000) / 1000} seconds when ready</label></details></div></dialog>`;
+      $('camera-view').addEventListener('cancel', event => { event.preventDefault(); actions.stopCamera(); });
       actions.refreshCamera();
     } else {
       const batch = store.inputMode === 'batch';
       intake.innerHTML = `<div class="drop-zone" id="drop-zone">
         <span class="upload-icon">${icon(batch ? 'layers' : 'upload', 24)}</span>
-        <strong>${batch ? 'Drop multiple fruit photos here' : 'Drop a fruit photo here'}</strong>
+        <strong>${batch ? 'Add your fruit photos' : 'A fresh look at your fruit'}</strong>
         <p>JPEG, PNG or WebP · Up to ${Math.round(maxBytes / 1024 ** 2)} MiB per file</p>
-        <div class="drop-actions"><button class="button browse small" type="button" data-action="${batch ? 'browse-batch' : 'browse-photo'}">${icon('folder', 16)} ${batch ? 'Browse files' : 'Browse photo'}</button>
+        <div class="drop-actions"><button class="button browse" type="button" data-action="${batch ? 'browse-batch' : 'browse-photo'}">${icon('plus', 18)} ${batch ? 'Photos' : 'Photo'}</button>
         
-        ${batch && 'webkitdirectory' in $('folder-input') ? `<button class="button small" type="button" data-action="browse-folder">Choose folder</button>` : ''}</div>
-        <small>${batch ? `Up to ${maxFiles.toLocaleString()} accepted photos per collection` : 'You can also paste an image from your clipboard.'}</small>
+        ${batch && 'webkitdirectory' in $('folder-input') ? `<button class="button" type="button" data-action="browse-folder">${icon('folder', 17)} Folder</button>` : ''}</div>
+        <small>${batch ? `Drop photos here · Up to ${maxFiles.toLocaleString()} per collection` : 'Or drop or paste a photo here.'}</small>
       </div>`;
       const drop = $('drop-zone');
       drop.ondragover = event => { event.preventDefault(); drop.classList.toggle('dragging', !store.uploadBusy); };
@@ -60,6 +63,7 @@ export function installIntake(context) {
       };
     }
     actions.renderIntakeState();
+    animatePage(intake);
   }
 
   // Release selected photo previews and reset file selection pagination.
@@ -121,8 +125,7 @@ export function installIntake(context) {
         <button class="icon-button" type="button" aria-label="Remove ${e(item.file.name)}" data-action="remove-file" data-key="${e(item.key)}" data-focus="remove-${e(item.key)}"${store.uploadBusy ? ' disabled' : ''}>${icon('close', 17)}</button></li>`;
       }).join('');
     const preview = store.inputMode !== 'batch' && store.selected.length === 1 ? store.selected[0] : null;
-    const previewMarkup = preview?.url ? `<figure class="selection-preview"><img src="${e(preview.url)}" alt="Selected photo ${e(preview.file.name)}"><figcaption>${e(preview.file.name)}</figcaption></figure>` : '';
-    preserveFocus(selectedList, store.selected.length ? `${previewMarkup}<div class="file-heading"><strong>${store.selected.length.toLocaleString()} ${store.selected.length === 1 ? 'file' : 'files'} added</strong><button type="button" class="text-button" data-action="clear-files" data-focus="clear-files"${store.uploadBusy ? ' disabled' : ''}>Clear files</button></div><ul class="files">${fileRows}</ul>${pages > 1 ? `<div class="pagination"><button class="button small" type="button" data-action="files-prev" data-focus="files-prev"${store.selectionPage <= 1 ? ' disabled' : ''}>Previous files</button><span>${store.selectionPage} of ${pages}</span><button class="button small" type="button" data-action="files-next" data-focus="files-next"${store.selectionPage >= pages ? ' disabled' : ''}>Next files</button></div>` : ''}` : '');
+    preserveFocus(selectedList, store.selected.length ? `<div class="file-heading"><strong>${store.selected.length.toLocaleString()} ${store.selected.length === 1 ? 'file' : 'files'} added</strong><button type="button" class="text-button" data-action="clear-files" data-focus="clear-files"${store.uploadBusy ? ' disabled' : ''}>Clear files</button></div><ul class="files">${fileRows}</ul>${pages > 1 ? `<div class="pagination"><button class="button small" type="button" data-action="files-prev" data-focus="files-prev"${store.selectionPage <= 1 ? ' disabled' : ''}>Previous files</button><span>${store.selectionPage} of ${pages}</span><button class="button small" type="button" data-action="files-next" data-focus="files-next"${store.selectionPage >= pages ? ' disabled' : ''}>Next files</button></div>` : ''}` : '');
     const message = [
       store.cameraError && store.inputMode === 'camera' ? callout(store.cameraError) : '',
       store.userNotice ? callout(store.userNotice) : '',
@@ -131,7 +134,7 @@ export function installIntake(context) {
     ].join('');
     if ($('input-message').innerHTML !== message) $('input-message').innerHTML = message;
     const cameraStart = intake.querySelector('[data-action="start-camera"]');
-    if (cameraStart) cameraStart.textContent = preview?.file.name.startsWith('fruit-') ? 'Retake photo' : 'Start camera';
+    if (cameraStart) cameraStart.querySelector('span').textContent = preview?.file.name.startsWith('fruit-') ? 'Retake' : 'Open camera';
     const submit = $('submit-photos');
     submit.disabled = !store.ready || !pending || store.uploadBusy;
     submit.querySelector('span').textContent = store.uploadBusy ? 'Submitting…'

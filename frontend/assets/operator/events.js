@@ -29,6 +29,17 @@ export function installEvents(context) {
     }
   }
 
+  // Move between console tabs using the standard arrow, Home, and End keys.
+  function onKeydown(event) {
+    const button = event.target.closest('[data-action="tab"]');
+    const index = tabs.indexOf(button);
+    if (index < 0 || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
+    const next = event.key === 'Home' ? 0 : event.key === 'End' ? tabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    actions.chooseTab(tabs[next].dataset.id);
+    tabs[next].focus();
+  }
+
   // Update request filters and debounce search before loading the first page.
   function changeFilter(event) {
     const input = event.target;
@@ -67,5 +78,5 @@ export function installEvents(context) {
     else actions.poll();
   }
 
-  Object.assign(actions, { onClick, changeFilter, preventForm, onImageError, onVisibility });
+  Object.assign(actions, { onClick, onKeydown, changeFilter, preventForm, onImageError, onVisibility });
 }

@@ -1,7 +1,7 @@
 // Render saved research metrics and links to validated research figures.
 import { MODELS } from '../api/contracts.js';
 import { nf, html, record, present, number, display, duration, score, words, modelName, localURL } from './format.js';
-import { btn, empty, notice, stateNotice, sectionHead, fields, metric } from './components.js';
+import { empty, notice, stateNotice, sectionHead, fields, metric } from './components.js';
 
 // Convert saved research column names into readable labels.
 export function researchLabel(key) {
@@ -52,13 +52,13 @@ export function researchRow(models, key) {
 
 // Render recorded fruit, quality, and joint accuracy without inventing missing values.
 export function researchModel(model, data) {
-  if (!data) return `<article class="fo-card fo-research-model"><h3>${html(model.name)}</h3>${empty('No saved evaluation for this model')}</article>`;
+  if (!data) return `<article data-reveal class="fo-card fo-research-model"><h3>${html(model.name)}</h3>${empty('No saved evaluation for this model')}</article>`;
   const values = [
     ['Fruit accuracy', data.fruit_accuracy],
     ['Quality accuracy', data.quality_accuracy],
     ['Joint accuracy', data.joint_accuracy],
   ];
-  return `<article class="fo-card fo-research-model"><h3>${html(model.name)}</h3>
+  return `<article data-reveal class="fo-card fo-research-model"><h3>${html(model.name)}</h3>
     <div class="fo-research-metrics">${values.map(([label, value]) => metric(label, researchValue('accuracy', value))).join('')}</div>
     <details class="fo-disclosure" data-disclosure="research-${html(model.key)}"><summary>Saved metrics and model metadata</summary>${researchData(data)}</details>
   </article>`;
@@ -82,7 +82,7 @@ export function researchFigures(resource) {
           const png = localURL(figure.png);
           const pdf = localURL(figure.pdf);
           const title = figure.title ?? 'Research figure';
-      return `<article class="fo-card fo-figure">${png ? `<a class="fo-figure-image" href="${html(png)}" ${png.startsWith('data:') ? 'download="fruispect-figure.png"' : 'target="_blank" rel="noopener noreferrer"'}><img src="${html(png)}" alt="${html(title)}" loading="lazy" decoding="async"></a>` : '<div class="fo-figure-image fo-muted">PNG preview unavailable</div>'}
+      return `<article data-reveal class="fo-card fo-figure">${png ? `<a class="fo-figure-image" href="${html(png)}" ${png.startsWith('data:') ? 'download="fruispect-figure.png"' : 'target="_blank" rel="noopener noreferrer"'}><img src="${html(png)}" alt="${html(title)}" loading="lazy" decoding="async"></a>` : '<div class="fo-figure-image fo-muted">PNG preview unavailable</div>'}
         <div class="fo-figure-copy"><h3>${html(title)}</h3>${figure.note ? `<p>${html(figure.note)}</p>` : ''}
         ${typeof figure.provenance === 'string' ? `<p class="fo-caption">${html(figure.provenance)}</p>` : ''}
         <div class="fo-actions">${[[png, 'PNG'], [pdf, 'PDF']].map(([url, type]) => url ? `<a class="fo-btn" href="${html(url)}" ${url.startsWith('data:') ? 'download="fruispect-figure.png"' : 'target="_blank" rel="noopener noreferrer"'}>${url.startsWith('data:') ? 'Download' : 'Open'} ${type}</a>` : `<span class="fo-caption">${type} unavailable</span>`).join('')}</div></div></article>`;
@@ -94,7 +94,7 @@ export function researchFigures(resource) {
 export function researchView(summary, figures) {
   const data = summary.data;
   return `<div class="fo-stack">
-    ${sectionHead('Research', 'Saved evaluation results and experiment artifacts.', btn('Refresh research', 'refresh'))}
+    ${sectionHead('Research', 'Saved evaluation results and experiment artifacts.')}
     ${stateNotice(summary, 'research summary')}
     ${summary.loading && !data ? empty('Loading saved research…') : ''}
     ${data ? `<section class="fo-section">${sectionHead('Held-out Test', 'Metrics from the saved test set. Uploaded photos are unlabeled.')}
@@ -102,10 +102,10 @@ export function researchView(summary, figures) {
       ${unavailableResearch(data.unavailable)}
     </section>
     <div class="fo-research-pair">
-      <section class="fo-card fo-research-section">${sectionHead('Quality by fruit', 'Saved per-fruit visual-quality evaluation.')}${researchData(data.quality_by_fruit)}</section>
-      <section class="fo-card fo-research-section">${sectionHead('Controlled Stress Test', 'Saved results under controlled photographic conditions.')}${researchData(data.stress)}</section>
+      <section data-reveal class="fo-card fo-research-section">${sectionHead('Quality by fruit', 'Saved per-fruit visual-quality evaluation.')}${researchData(data.quality_by_fruit)}</section>
+      <section data-reveal class="fo-card fo-research-section">${sectionHead('Controlled Stress Test', 'Saved results under controlled photographic conditions.')}${researchData(data.stress)}</section>
     </div>
-    <section class="fo-card fo-research-section">${sectionHead('Saved benchmarks and provenance', 'Saved benchmark timing describes the evaluation run.')}
+    <section data-reveal class="fo-card fo-research-section">${sectionHead('Saved benchmarks and provenance', 'Saved benchmark timing describes the evaluation run.')}
       ${researchData({ 'Metrics source': data.metrics_source, Provenance: data.provenance, Manifest: data.manifest, 'Training versions': data.training_versions, ...(data.benchmark ? { Benchmark: data.benchmark } : {}) })}
     </section>` : !summary.error && !summary.loading ? empty('No saved evaluation available') : ''}
     ${researchFigures(figures)}

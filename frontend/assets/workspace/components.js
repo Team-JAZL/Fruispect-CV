@@ -1,6 +1,6 @@
 // Render photo thumbnails, prediction cards, and agreement summaries.
 import { FRUITS, JOB_LABELS, isTerminal } from '../api/contracts.js';
-import { icon, escapeHtml as e, photoUrl, formatScore } from '../ui.js';
+import { icon, escapeHtml as e, photoUrl, formatScore, formatDate } from '../ui.js';
 // Create a stable identifier for an upload admission or collection.
 export const makeKey = () => globalThis.crypto?.randomUUID?.() ?? `fruispect-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
@@ -29,24 +29,44 @@ export function thumbnail(image, cls = '') {
     : icon('photo', 26)}</div>`;
 }
 
+// Render a bounded native confidence bar without inventing missing scores.
+export function confidenceBar(value, label) {
+  const valid = typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 1;
+  return valid ? `<progress class="confidence-bar" max="1" value="${value}" aria-label="${e(label)}">${formatScore(value)}</progress>` : '';
+}
+
+// Render one model's essential predictions directly in the current check.
+export function checkSummary(model, job) {
+  const result = job?.status === 'COMPLETED' ? job.result : null;
+  return `<article class="check-summary" data-reveal><h3><span class="model-dot ${model.key}" aria-hidden="true"></span>${e(model.name)}</h3>
+    ${result ? `<div class="summary-predictions">${[
+      ['Fruit', result.predicted_fruit, result.fruit_confidence],
+      ['Quality', result.predicted_quality, result.quality_confidence],
+    ].map(([label, prediction, score]) => `<div><span>${label}</span><strong class="${prediction === 'Good' ? 'quality-good' : prediction === 'Bad' ? 'quality-bad' : ''}">${e(prediction || 'Not available')}</strong><small>${formatScore(score)}</small>${confidenceBar(score, `${model.name} ${label} confidence`)}</div>`).join('')}</div>`
+    : `<p class="summary-status">${badge(job?.cancel_requested && !isTerminal(job.status) ? 'Cancellation requested' : JOB_LABELS[job?.status] ?? 'Waiting for photo', jobTone(job?.status))}${job?.error_message ? `<span>${e(job.error_message)}</span>` : ''}</p>`}</article>`;
+}
+
 // Render one independent model prediction or its current job state.
 export function resultCard(model, job, imageId) {
   const status = job?.status;
   const pending = status && !isTerminal(status);
   const label = job?.cancel_requested && pending ? 'Cancellation requested' : JOB_LABELS[status] ?? 'Awaiting photo';
   const result = status === 'COMPLETED' ? job.result : null;
-  return `<article class="model-card ${jobTone(status)}">
+  return `<article data-reveal class="model-card ${jobTone(status)}">
     <header class="model-head"><span class="tile-icon ${model.key}">${icon('chip', 18)}</span>
     <h3>${e(model.name)}</h3>${badge(label, jobTone(status))}</header>
     ${result ? `<div class="predictions">
       <div><span>Fruit prediction</span><strong>${e(result.predicted_fruit || 'Not available')}</strong><small>${formatScore(result.fruit_confidence)}${result.fruit_confidence == null ? '' : ' confidence'}</small></div>
       <div><span>Visual quality</span><strong class="${result.predicted_quality === 'Good' ? 'quality-good' : result.predicted_quality === 'Bad' ? 'quality-bad' : ''}">${e(result.predicted_quality || 'Not available')}</strong><small>${formatScore(result.quality_confidence)}${result.quality_confidence == null ? '' : ' confidence'}</small></div>
       </div>
-      <details class="probabilities" data-detail="${e(imageId)}-${model.key}">
-        <summary data-focus="${e(imageId)}-${model.key}">Class scores</summary>
-        ${[['Fruit', result.fruit_probabilities, FRUITS], ['Visual quality', result.quality_probabilities, ['Good','Bad']]].map(([title, values, classes]) => `<div><b>${title}</b><dl>${classes.map(name => `<div><dt>${e(name)}</dt><dd>${formatScore(values?.[name])}</dd></div>`).join('')}</dl></div>`).join('')}
-      </details>` : `<div class="pending-result">${pending ? '<span class="pulse" aria-hidden="true"></span>' : icon(status ? 'info' : 'activity', 18)}
+      <div class="probabilities">
+        ${[['Fruit confidence', result.fruit_probabilities, FRUITS], ['Quality confidence', result.quality_probabilities, ['Good','Bad']]].map(([title, values, classes]) => `<div><h4>${title}</h4><dl>${classes.map(name => `<div class="class-score"><dt>${e(name)}</dt><dd>${formatScore(values?.[name])}</dd>${confidenceBar(values?.[name], `${model.name}: ${name}`)}</div>`).join('')}</dl></div>`).join('')}
+      </div>` : `<div class="pending-result">${pending ? '<span class="pulse" aria-hidden="true"></span>' : icon(status ? 'info' : 'activity', 18)}
       <p>${e(job?.error_message || (job?.cancel_requested && pending ? 'Waiting for this check to end.' : pending ? 'The result will appear when this model finishes.' : status ? 'This model ended without a result.' : 'Add a fruit photo to start this model.'))}</p></div>`}
+    ${job ? `<details class="model-timing" data-detail="${e(imageId)}-${model.key}-timing"><summary data-focus="${e(imageId)}-${model.key}-timing">Check details</summary><dl>
+      <div><dt>Inference</dt><dd>${Number.isFinite(result?.inference_ms) ? `${e(result.inference_ms.toLocaleString(undefined, { maximumFractionDigits: 1 }))} ms` : 'Not available'}</dd></div>
+      <div><dt>Queued</dt><dd>${e(formatDate(job.queued_at))}</dd></div><div><dt>Started</dt><dd>${e(formatDate(job.started_at))}</dd></div><div><dt>Finished</dt><dd>${e(formatDate(job.completed_at))}</dd></div>
+    </dl></details>` : ''}
   </article>`;
 }
 

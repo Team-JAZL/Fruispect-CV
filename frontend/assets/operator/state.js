@@ -27,6 +27,7 @@ export function createOperatorState(connection) {
     renderQueued: false,
     renderedView: '',
     renderedRequest: null,
+    renderedImageId: null,
     downloads: new Map(),
     renderedHTML: new WeakMap()
   };

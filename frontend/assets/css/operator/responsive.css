@@ -16,8 +16,10 @@
   .fo-header { align-items: flex-start; margin-bottom: .9rem; }
   .fo-header h1 { font-size: 2rem; }
   .fo-description { font-size: .79rem; }
-  .fo-tabs { margin-bottom: .95rem; gap: .12rem; }
-  .fo-tabs button { flex: 1 0 auto; padding-inline: .56rem; font-size: .76rem; }
+  .fo-tabs { margin-bottom: .95rem; gap: .12rem; overflow: visible; }
+  .fo-tabs button { flex: 1 1 0; min-width: 0; flex-direction: column; gap: .24rem; padding: .5rem .1rem; font-size: .66rem; }
+  .fo-toolbar { gap: .35rem; flex-wrap: wrap; justify-content: flex-end; max-width: 110px; }
+  .fo-toolbar .fo-access { padding: 0; }
   .fo-stack { gap: 1.02rem; }
   .fo-section-head { flex-wrap: wrap; }
   .fo-host { min-height: 0; padding: .95rem; }
@@ -28,11 +30,13 @@
   .fo-photo-list { max-height: 15rem; overflow-y: auto; padding: 3px; margin: -3px; }
   .fo-collection-list .fo-selection-list { max-height: 12rem; }
   .fo-summary-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fo-console :is(.fo-btn, input, select) { min-height: 42px; }
+  .fo-console :is(.fo-btn, input, select) { min-height: 44px; }
+  .fo-btn--icon { width: 44px; }
   .fo-console .fo-btn--text { min-height: 28px; }
 }
 @media (max-width: 345px) {
   .fo-header { flex-direction: column; gap: .45rem; }
+  .fo-toolbar { max-width: none; flex-wrap: nowrap; align-self: stretch; justify-content: space-between; }
   .fo-timeline li { grid-template-columns: 1fr; }
   .fo-probability-grid { grid-template-columns: 1fr; }
 }

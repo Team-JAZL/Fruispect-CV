@@ -8,6 +8,7 @@ import { installWatch } from './watch.js';
 import { installRender } from './render.js';
 import { installUpload } from './upload.js';
 import { installCommands } from './commands.js';
+import { installReview } from './review.js';
 
 // Create workspace for the current browser session.
 export function createWorkspace(root, { service, config, confirmAction, notify, onPairing, onNavigate }) {
@@ -33,6 +34,7 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
   installRender(context);
   installUpload(context);
   installCommands(context);
+  installReview(context);
   for (const [id, many] of [['photo-input', false], ['device-input', false], ['batch-input', true], ['folder-input', true]]) {
     $(id).onchange = event => {
       actions.addFiles(event.target.files, many);
@@ -78,11 +80,13 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
       }
       else if (action === 'new-batch') actions.createCollection();
       else if (action === 'open-image') {
-        store.selectedId = id;
-        actions.renderResults();
-        actions.refreshImage(id, true);
-        onNavigate('scan');
-        requestAnimationFrame(() => $('results-title').scrollIntoView({ block: 'nearest' }));
+        actions.openReview(id, actionButton);
+      } else if (action === 'close-review') actions.closeReview();
+      else if (action === 'retry-review') actions.openReview(store.reviewId);
+      else if (action === 'refresh-collections') {
+        store.collectionNotice = '';
+        actions.refreshBatches();
+        actions.refreshList();
       } else if (action === 'prev' || action === 'next') {
         store.listQuery.page += action === 'prev' ? -1 : 1;
         actions.refreshList();
@@ -111,7 +115,9 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
       actions.stopWatch();
     });
   window.addEventListener('pageshow', event => {
-      if (event.persisted && store.batchId) actions.watchBatch(store.batchId, store.activeBatch?.event_cursor ?? 0);
+      if (!event.persisted) return;
+      actions.refreshCamera();
+      if (store.batchId) actions.watchBatch(store.batchId, store.activeBatch?.event_cursor ?? 0);
     });
   actions.renderInputMode();
   actions.renderCollections();
@@ -121,6 +127,7 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
     setReady(value) {
       store.ready = value;
       if (!value) {
+        actions.closeReview();
         store.started = false;
         actions.stopWatch();
       }
@@ -133,6 +140,7 @@ export function createWorkspace(root, { service, config, confirmAction, notify, 
     // Set page.
     setPage(next) {
       const previous = store.page;
+      if (next !== 'collections') actions.closeReview();
       store.page = next;
       $('scan-screen').hidden = next !== 'scan';
       $('collections-screen').hidden = next !== 'collections';

@@ -26,12 +26,12 @@ def create_batch():
     return jsonify(batch=result), 202
 
 
-# Return the latest retained collections owned by this browser.
+# Return all retained collections owned by this browser.
 @api.get('/api/batches')
 def batches():
     database, _ = services()
     with database.connect() as db:
-        rows = [batch_view(db, r[0]) for r in db.execute('SELECT batch_id FROM batches WHERE session_id=? ORDER BY created_at DESC LIMIT 30', (session['sid'],)).fetchall()]
+        rows = [batch_view(db, r[0]) for r in db.execute('SELECT batch_id FROM batches WHERE session_id=? ORDER BY created_at DESC, batch_id DESC', (session['sid'],)).fetchall()]
     return jsonify(batches=rows)
 
 

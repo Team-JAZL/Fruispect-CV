@@ -6,6 +6,8 @@ export const TABS = [
   ['research', 'Research'], ['settings', 'Settings'],
 ];
 
+export const TAB_ICONS = { overview: 'overview', requests: 'folder', queues: 'queue', research: 'chart', settings: 'tune' };
+
 export const PAGE_SIZE = 20;
 
 export const TIMELINE_SIZE = 60;

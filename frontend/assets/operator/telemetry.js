@@ -39,7 +39,7 @@ export function timings(lane) {
 export function modelHealth(model, lane, readiness) {
   const state = lane?.state ?? readiness?.state ?? readiness?.status;
   const modelError = message(lane?.last_error ?? readiness?.last_error);
-  return `<article class="fo-card fo-health-card">
+  return `<article data-reveal class="fo-card fo-health-card">
     <div class="fo-card-head"><h3>${html(model.name)}</h3>${badge(state, state ? undefined : 'Unknown')}</div>
     <div class="fo-health-main"><div><span class="fo-caption">Current job</span><strong>${lane ? lane.active ? html(seq(lane.active.admission_seq)) : 'Idle' : '—'}</strong></div>${metric('Waiting jobs', count(lane?.queue_depth))}</div>
     <div class="fo-health-footer"><span>${html(display(lane?.device ?? readiness?.device))}</span><span>Mean inference <b>${html(duration(lane?.mean_inference_ms))}</b></span></div>
@@ -69,7 +69,7 @@ export function overview({ queues, readiness, health, connection, updated }) {
   : readiness.loading ? 'Checking host readiness…' : 'Host readiness unavailable';
   const storage = readiness.data?.storage_ready;
   return `<div class="fo-stack">
-    <section class="fo-host" aria-label="Host status">
+    <section class="fo-host" data-reveal aria-label="Host status">
       <div class="fo-host-copy"><div class="fo-host-kicker"><i aria-hidden="true" class="${serviceState === 'READY' ? 'fo-is-ready' : ''}"></i> Host status</div><h2>${serviceTitle}</h2><p>${html(healthStatus ? 'API health: ' + words(healthStatus) : health.error ? 'Health check unavailable' : 'Waiting for host health check')}${readiness.data?.device ? ' · Device: ' + html(readiness.data.device) : ''}</p></div>
       <div class="fo-host-metrics">
         ${metric('Workers ready', readyCount === null ? '—' : readyCount + ' / ' + MODELS.length)}
@@ -79,11 +79,11 @@ export function overview({ queues, readiness, health, connection, updated }) {
     </section>
     ${stateNotice(readiness, 'host readiness')}${stateNotice(health, 'API health')}${stateNotice(queues, 'queue telemetry')}
     <section class="fo-section">
-      ${sectionHead('Model health', 'Worker readiness and current work across three independent model lanes.', btn('View queues', 'tab', { id: 'queues' }))}
+      ${sectionHead('Model health', 'Three independent workers.', btn('View queues', 'tab', { id: 'queues', shortLabel: 'Queues' }))}
       <div class="fo-model-grid">${MODELS.map((model, index) => modelHealth(model, lanes[index], modelReadiness[index])).join('')}</div>
     </section>
-    <section class="fo-card fo-table-card">
-      ${sectionHead('Work on the host', 'Job counts cover retained records. Admission sequence identifies a photo.', updated ? `<span class="fo-update">Updated ${html(clock.format(updated))}</span>` : '')}
+    <section data-reveal class="fo-card fo-table-card">
+      ${sectionHead('Work on the host', 'Retained jobs by model.', updated ? `<span class="fo-update">Updated ${html(clock.format(updated))}</span>` : '')}
       <div class="fo-table-wrap" role="region" aria-label="Model work summary" tabindex="0"><table class="fo-table"><thead><tr><th scope="col">Model</th><th scope="col">Active job</th><th scope="col">Up next</th><th scope="col">Successful</th><th scope="col">Failed</th><th scope="col">Unavailable</th><th scope="col">Cancelled</th><th scope="col">P95 inference</th></tr></thead>
       <tbody>${MODELS.map((model, index) => {
         const lane = lanes[index];
@@ -92,15 +92,15 @@ export function overview({ queues, readiness, health, connection, updated }) {
       }).join('')}</tbody></table></div>
       <p class="fo-card-note">Rolling timing uses up to 100 retained completed jobs per model.</p>
     </section>
-    <div class="fo-overview-bottom"><span>${html((connection?.local_operator === true ? 'Direct localhost access' : 'Browser-session access'))}</span>${btn('Connection settings', 'tab', { id: 'settings', variant: 'text' })}</div>
+    <div class="fo-overview-bottom" data-reveal><span>${html((connection?.local_operator === true ? 'Direct localhost access' : 'Browser-session access'))}</span>${btn('Connection settings', 'tab', { id: 'settings', variant: 'text', shortLabel: 'Connection' })}</div>
   </div>`;
 }
 
 // Render one independent FIFO lane with active and upcoming jobs.
 export function queueLane(model, lane) {
-  if (!lane) return `<article class="fo-card fo-lane"><div class="fo-card-head"><h3>${html(model.name)}</h3>${badge(null)}</div>${empty('Lane data unavailable', 'The host has not returned telemetry for this worker.')}</article>`;
+  if (!lane) return `<article data-reveal class="fo-card fo-lane"><div class="fo-card-head"><h3>${html(model.name)}</h3>${badge(null)}</div>${empty('Lane data unavailable', 'The host has not returned telemetry for this worker.')}</article>`;
   const upcoming = array(lane.up_next).slice(0, 8);
-  return `<article class="fo-card fo-lane">
+  return `<article data-reveal class="fo-card fo-lane">
     <div class="fo-card-head"><div><h3>${html(model.name)}</h3><p>${html(display(lane.device))}</p></div>${badge(lane.state)}</div>
     <div class="fo-lane-current"><div><span class="fo-caption">Active job</span><strong>${lane.active ? jobLink(lane.active) : 'Idle'}</strong><span>${lane.active ? html(number(lane.active_duration_ms) === null ? 'Duration unavailable' : elapsed(lane.active_duration_ms) + ' active') : 'No job in progress'}</span></div>${metric('Waiting jobs', count(lane.queue_depth))}</div>
     ${lane.active ? `<p class="fo-lane-start">Started ${html(date(lane.active.started_at))}</p>` : ''}
@@ -120,7 +120,7 @@ export function queueLane(model, lane) {
 // Render every model lane with telemetry availability and refresh controls.
 export function queuesView(queues) {
   return `<div class="fo-stack">
-    ${sectionHead('Model queues', 'Each worker takes jobs from its own first-in, first-out lane.', btn('Refresh queues', 'refresh'))}
+    ${sectionHead('Model queues', 'Photos run in arrival order, one queue per model.')}
     ${stateNotice(queues, 'queue telemetry')}
     ${queues.loading && !queues.data ? empty('Reading queue telemetry…') : ''}
     <div class="fo-model-grid">${MODELS.map((model) => queueLane(model, laneFor(queues.data, model.key))).join('')}</div>

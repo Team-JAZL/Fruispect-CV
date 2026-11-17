@@ -9,6 +9,19 @@ from app.queue.coordinator import Coordinator
 from conftest import batch, upload, png, ready, result
 
 
+# Verify retained collection history has no count cap and remains browser-owned.
+def test_collection_history_includes_more_than_thirty_owned_batches(client, app):
+    owned = [batch(client) for _ in range(37)]
+    other = batch(app.test_client())
+    response = client.get('/api/batches')
+    assert response.status_code == 200
+    history = response.get_json()['batches']
+    assert len(history) == len(owned)
+    assert {item['batch_id'] for item in history} == set(owned)
+    assert other not in {item['batch_id'] for item in history}
+    assert history[0]['batch_id'] == owned[-1]
+
+
 # Verify batch integrity and replay.
 @pytest.mark.parametrize('count',[1,10,50,100])
 def test_batch_integrity_and_replay(client,database,cfg,count):

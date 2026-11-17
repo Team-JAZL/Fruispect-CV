@@ -24,7 +24,7 @@ export function eventTimeline(request) {
   const { events, history, streamStatus } = request;
   const streamLabel = { connecting: 'Connecting', reconnecting: 'Reconnecting', live: 'Live updates', polling: 'Polling for updates', unavailable: 'Updates unavailable' }[streamStatus];
   const visibleEvents = request.imageId ? events.filter((event) => !event.image_id || event.image_id === request.imageId) : events;
-  return `<section class="fo-card fo-timeline">
+  return `<section data-reveal class="fo-card fo-timeline">
     ${sectionHead('Event timeline', request.imageId ? 'Recent events for this photo and its collection.' : 'Recent events for this collection.', streamLabel ? badge(streamStatus === 'live' ? 'READY' : '', streamLabel) : '')}
     ${stateNotice(history, 'event history', events.length > 0)}
     ${request.streamError ? notice(errorText(request.streamError), 'warn') : ''}
@@ -38,20 +38,20 @@ export function requestDetails(request, busy) {
   if (!batch) return stateNotice(request.batch, 'collection') + (request.batch.loading ? empty('Opening collection…') : '');
   const summary = batch.summary ?? {};
   const canCancel = batch.status === 'ACTIVE' && ((number(summary.accepted) ?? 0) > (number(summary.fully_complete) ?? 0) || number(summary.accepted) === null);
-  return `<section class="fo-card fo-request-summary">
+  return `<section data-reveal class="fo-card fo-request-summary">
     ${stateNotice(request.batch, 'collection')}
-    <div class="fo-card-head"><div><h2>Collection detail</h2><p class="fo-mono">${html(display(batch.batch_id))}</p></div>${badge(batch.status)}</div>
+    <div class="fo-card-head"><div><h2>Collection detail</h2><p class="fo-mono">${html(shortId(batch.batch_id))}</p></div>${badge(batch.status)}</div>
     ${batchSummary(batch)}
     <div class="fo-summary-metrics">${metric('Accepted photos', count(summary.accepted))}${metric('Rejected submissions', count(summary.rejected))}${metric('Queued model jobs', count(summary.queued))}${metric('Running model jobs', count(summary.running))}</div>
     <details class="fo-disclosure" data-disclosure="batch-summary"><summary>Collection counts and timestamps</summary>
       ${fields([
-        ['Created', date(batch.created_at)], ['Cancelled', date(batch.cancelled_at)], ['Total submissions', summary.total_submitted],
+        ['Collection ID', batch.batch_id, true], ['Created', date(batch.created_at)], ['Cancelled', date(batch.cancelled_at)], ['Total submissions', summary.total_submitted],
         ['Photos preparing', summary.preprocessing], ['Photos with partial results', summary.partial], ['Photos with a failed or unavailable check', summary.failed], ['Photos with a cancelled check', summary.cancelled],
       ])}
       <p class="fo-card-note">A photo can appear in more than one count.</p>
     </details>
     <div class="fo-actions">
-      ${btn('Export CSV', 'export', { id: 'csv', disabled: busy })}${btn('Export JSON', 'export', { id: 'json', disabled: busy })}
+      ${btn('Export CSV', 'export', { id: 'csv', disabled: busy, shortLabel: 'CSV' })}${btn('Export JSON', 'export', { id: 'json', disabled: busy, shortLabel: 'JSON' })}
       ${canCancel ? btn('Cancel collection', 'cancel-batch', { disabled: busy }) : ''}
       ${btn('Delete collection', 'delete-batch', { disabled: busy, variant: 'danger' })}
     </div>
@@ -91,16 +91,16 @@ export function photoFilters(query) {
 // Render owned collections, selected photos, and their event history.
 export function requestsView(request, batches, busy, cleared) {
 
-  const intro = sectionHead('Requests', 'A collection groups accepted photos. Each photo creates three model jobs.');
+  const intro = sectionHead('Requests', 'Choose a collection, then a photo.');
 
   return `${intro}${cleared ? notice(cleared) : ''}
     <div class="fo-requests-grid">
       <aside class="fo-requests-aside">
-        <section class="fo-card fo-collection-list">
+        <section data-reveal class="fo-card fo-collection-list">
           ${sectionHead('Collections', 'Owned by this browser session.')}
           <div data-slot="collections">${batchList(batches, request?.id)}</div>
         </section>
-        ${request ? `<section class="fo-card fo-photos">
+        ${request ? `<section data-reveal class="fo-card fo-photos">
           ${sectionHead('Photos', 'Search and filter accepted inputs.')}
           <div data-slot="filters">${photoFilters(request.query)}</div>
           <div data-slot="photos">${requestPhotos(request)}</div>
@@ -108,9 +108,9 @@ export function requestsView(request, batches, busy, cleared) {
       </aside>
       <div class="fo-request-main">
         ${request ? `<div data-slot="summary">${requestDetails(request, busy)}</div>
-          <section class="fo-card fo-photo-panel" aria-label="Photo details"><div data-slot="image">${imageDetail(request.image, busy)}</div></section>
+          <section data-reveal class="fo-card fo-photo-panel" aria-label="Photo details"><div data-slot="image">${imageDetail(request.image, busy)}</div></section>
           <div data-slot="timeline">${eventTimeline(request)}</div>`
-          : `<section class="fo-card">${empty('No collection selected', 'Select a collection to see its progress, photos, and model results.')}</section>`}
+          : `<section data-reveal class="fo-card">${empty('No collection selected', 'Select a collection to see its progress, photos, and model results.')}</section>`}
       </div>
     </div>`;
 }

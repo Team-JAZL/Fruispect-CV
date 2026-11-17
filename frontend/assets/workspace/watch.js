@@ -27,9 +27,11 @@ export function installWatch(context) {
           store.refreshTimer = setTimeout(() => {
               const ids = [...store.eventImages];
               store.eventImages.clear();
-              if (!ids.length && store.selectedId) actions.refreshImage(store.selectedId);
+              if (!ids.length) {
+                for (const imageId of new Set([store.selectedId, store.reviewId].filter(Boolean))) actions.refreshImage(imageId);
+              }
               else for (const imageId of ids) {
-                if (imageId === store.selectedId || store.cache.has(imageId)) actions.refreshImage(imageId);
+                if (imageId === store.selectedId || imageId === store.reviewId || store.cache.has(imageId)) actions.refreshImage(imageId);
               }
               if (store.page === 'collections') actions.refreshList({ quiet: true });
               actions.refreshBatchSummary(id);
@@ -51,12 +53,14 @@ export function installWatch(context) {
             onPairing(detail?.message ?? status?.error?.message);
           }
           actions.renderResults();
+          actions.renderReview();
         },
         onRecover: ({ cursor: nextCursor } = {}) => {
           if (id !== store.batchId) return;
           if (Number.isSafeInteger(nextCursor)) store.cursors.set(id, nextCursor);
           actions.refreshBatchSummary(id);
           if (store.selectedId) actions.refreshImage(store.selectedId);
+          if (store.reviewId && store.reviewId !== store.selectedId) actions.refreshImage(store.reviewId);
           if (store.page === 'collections') actions.refreshList({ quiet: true });
         },
       });

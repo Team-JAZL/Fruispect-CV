@@ -16,6 +16,14 @@
   <script type="module" src="{{ url_for('api.frontend_asset', filename='app.js') }}"></script>
 </head>
 <body>
+  <div id="welcome-screen" class="welcome-screen" role="status" aria-label="Opening Fruispect" hidden>
+    <div class="welcome-orbit"><span></span><img src="{{ url_for('api.frontend_asset', filename='robot.png') }}" alt="Fruispect robot" width="180" height="180"></div>
+    <span class="eyebrow">A LITTLE CURIOSITY. A FRESH PERSPECTIVE.</span>
+    <h1>Let’s look a little closer<span>.</span></h1>
+    <p id="welcome-message">One fruit, one clear photo. You’ve got this!</p>
+    <progress id="welcome-progress" max="100" value="8" aria-label="Opening workspace"></progress>
+    <small>Opening your Fruispect workspace</small>
+  </div>
   <a class="skip" href="#main">Skip to main content</a>
   <div id="app"><p class="startup" role="status">Opening Fruispect…</p></div>
   <noscript><p class="startup">Enable JavaScript to use the Fruispect workspace.</p></noscript>

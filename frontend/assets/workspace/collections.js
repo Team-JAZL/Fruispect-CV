@@ -14,7 +14,7 @@ export function installCollections(context) {
     store.cache.delete(id);
     store.cache.set(id, merged);
     if (store.cache.size > 70) {
-      const oldest = [...store.cache.keys()].find(candidate => candidate !== store.selectedId);
+      const oldest = [...store.cache.keys()].find(candidate => candidate !== store.selectedId && candidate !== store.reviewId);
       if (oldest) store.cache.delete(oldest);
     }
   }
@@ -28,10 +28,14 @@ export function installCollections(context) {
       if (requestBatch !== store.batchId || !image) return;
       actions.remember(image);
       if (id === store.selectedId) actions.renderResults();
+      if (id === store.reviewId) actions.renderReview();
     } catch (error) {
       if (requestBatch !== store.batchId) return;
       if (error.status === 401) onPairing(error.message);
-      else if (report) actions.showError(error);
+      else if (report && id === store.reviewId) {
+        store.reviewError = error.message || 'The results could not be loaded.';
+        actions.renderReview();
+      } else if (report) actions.showError(error);
     }
   }
 
@@ -50,6 +54,7 @@ export function installCollections(context) {
   // Clear removed collection state and discard obsolete subscriptions.
   function forgetCollection(id, message = 'This collection has expired or was deleted.') {
     if (id !== store.batchId) return;
+    actions.closeReview?.();
     store.loadSequence++;
     actions.stopWatch();
     store.batchId = null;
@@ -107,6 +112,7 @@ export function installCollections(context) {
   async function chooseBatch(id, preferredImage = null) {
     const sequence = ++store.loadSequence;
     if (store.batchId !== id) {
+      actions.closeReview?.();
       actions.stopWatch();
       store.streamStatus = '';
       store.cache.clear();

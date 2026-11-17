@@ -1,7 +1,7 @@
 // Render selected predictions and paginated browser collections.
 import { MODELS, isTerminal } from '../api/contracts.js';
 import { icon, escapeHtml as e, formatDate, preserveFocus } from '../ui.js';
-import { idOf, badge, callout, thumbnail, resultCard, agreement } from './components.js';
+import { idOf, badge, callout, thumbnail, checkSummary, agreement } from './components.js';
 
 // Connect render behavior to shared state and actions.
 export function installRender(context) {
@@ -9,7 +9,7 @@ export function installRender(context) {
 
   // Render the selected photo, its preparation state, and available commands.
   function previewImage(image) {
-    if (!image) return `<div class="empty compact"><span class="tile-icon green">${icon('scan', 22)}</span><h3>No photo checked yet</h3><p>Add a fruit photo to see its status here.</p></div>`;
+    if (!image) return `<div class="empty compact" data-reveal><span class="idle-scan">${icon('scan', 34)}</span><h3>A little clarity for your fruit</h3><p>Add a photo and tap Check fruit.</p><small>Your results will appear here.</small></div>`;
     const count = MODELS.filter(({ key }) => image.jobs?.[key]?.status === 'COMPLETED' && image.jobs[key].result).length;
     const pending = MODELS.some(({ key }) => {
         const status = image.jobs?.[key]?.status;
@@ -17,24 +17,23 @@ export function installRender(context) {
       });
     const title = image.input_status === 'FAILED' ? 'Photo could not be prepared' : image.terminal
     ? 'Checks ended' : image.input_status === 'PROCESSING' ? 'Preparing photo' : count ? 'Partial results available' : 'Checks in progress';
-    return `<div class="inspection-image">${thumbnail(image, 'inspection-thumb')}
+    return `<div data-reveal class="inspection-image${pending ? ' is-scanning' : ''}">${thumbnail(image, 'inspection-thumb')}
       <div class="photo-meta"><span><strong>${e(image.original_filename || 'Fruit photo')}</strong><small>${e(title)}</small></span>
       ${badge(image.terminal ? 'Ended' : 'In progress', image.terminal ? 'neutral' : 'active')}</div></div>
       ${image.input_error ? callout(typeof image.input_error === 'string' ? image.input_error : image.input_error.message ?? 'The photo could not be prepared.') : ''}
-      <div class="agreement"><span class="tile-icon mini green">${icon(count > 1 ? 'layers' : 'activity', 17)}</span><p>${e(agreement(image))}</p></div>
-      ${pending ? `<button type="button" class="text-button cancellation" data-action="cancel-image" data-focus="cancel-image">${icon('close', 15)} Cancel unfinished checks</button>` : ''}`;
+      <div class="check-summaries">${MODELS.map(model => checkSummary(model, image.jobs?.[model.key])).join('')}</div>
+      <div class="agreement" data-reveal><span class="tile-icon mini green">${icon(count > 1 ? 'layers' : 'activity', 17)}</span><p>${e(agreement(image))}</p></div>
+      <div class="check-actions" data-reveal><button type="button" class="text-button" data-page="collections">${icon('folder', 16)} Collections</button>${pending ? `<button type="button" class="text-button cancellation" data-action="cancel-image" data-focus="cancel-image">${icon('close', 15)} Cancel checks</button>` : ''}</div>`;
   }
 
   // Render results from the current application state.
   function renderResults() {
     const image = store.cache.get(store.selectedId);
     const count = image ? MODELS.filter(({ key }) => image.jobs?.[key]?.status === 'COMPLETED' && image.jobs[key].result).length : 0;
-    preserveFocus($('inspection-panel'), `<header class="panel-header"><span class="tile-icon green">${icon('activity', 19)}</span>
-      <div><h2>Current check</h2><p>Selected fruit photo</p></div></header>
+    preserveFocus($('inspection-panel'), `<header class="panel-header" data-reveal><span class="tile-icon green">${icon('activity', 19)}</span>
+      <div><h2>Current check</h2><p>${image ? `${count} of 3 results ready` : 'Fruit, quality & confidence'}</p></div></header>
       ${store.streamStatus ? callout(store.streamStatus, 'neutral') : ''}
       ${actions.previewImage(image)}`);
-    $('results-count').innerHTML = `<span class="badge neutral result-count">${icon('layers', 15)} ${count} of 3 model results available</span>`;
-    preserveFocus($('result-cards'), MODELS.map(model => resultCard(model, image?.jobs?.[model.key], store.selectedId)).join(''));
     const state = image ? `${image.original_filename || 'Fruit photo'}: ${count} of 3 model results available.${image.terminal ? ' Checks ended.' : ''}` : '';
     if (state !== store.lastLiveAnnouncement) {
       store.lastLiveAnnouncement = state;
@@ -56,7 +55,7 @@ export function installRender(context) {
     const batchButtons = store.batchId ? `<div class="collection-actions">
       <button type="button" class="button small" data-action="export-csv" data-focus="export-csv">${icon('download', 15)} CSV</button>
       <button type="button" class="button small" data-action="export-json" data-focus="export-json">JSON</button>
-      ${accepted > ended ? '<button type="button" class="button small" data-action="cancel-batch" data-focus="cancel-batch">Cancel unfinished</button>' : ''}
+      ${accepted > ended ? `<button type="button" class="icon-button" data-action="cancel-batch" data-focus="cancel-batch" aria-label="Cancel unfinished checks" title="Cancel unfinished checks">${icon('close', 17)}</button>` : ''}
       <button type="button" class="icon-button text-danger" aria-label="Delete this collection" data-action="delete-batch" data-focus="delete-batch">${icon('trash', 17)}</button>
       </div>` : '';
     preserveFocus($('collection-heading'), `<header class="panel-header collection-header"><div><h2>Collection photos</h2>
@@ -67,7 +66,7 @@ export function installRender(context) {
         const id = idOf(image);
         const imageStatus = image.terminal ? 'Checks ended' : image.input_status === 'PROCESSING' ? 'Preparing photo' : 'Checks in progress';
       return `<li class="collection-row">${thumbnail(image, 'collection-thumb')}<div><strong>${e(image.original_filename || 'Fruit photo')}</strong><small>${e(formatDate(image.received_at))}</small></div>
-        ${badge(imageStatus, image.terminal ? 'neutral' : 'active')}<button class="button small" type="button" data-action="open-image" data-id="${e(id)}" data-focus="image-${e(id)}">View results ${icon('chevron', 14)}</button></li>`;
+        ${badge(imageStatus, image.terminal ? 'neutral' : 'active')}<button class="button small review-button" type="button" data-action="open-image" data-id="${e(id)}" data-focus="image-${e(id)}" aria-label="View results for ${e(image.original_filename || 'Fruit photo')}" aria-haspopup="dialog" title="View results">${icon('eye', 18)}<span class="button-label">Results</span></button></li>`;
       }).join('');
     const maxPage = Math.max(1, Math.ceil((store.list.total ?? 0) / (store.list.limit || store.listQuery.limit)));
     preserveFocus($('collection-list'), rows ? `<ul class="collection-rows">${rows}</ul>

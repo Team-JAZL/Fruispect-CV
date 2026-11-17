@@ -5,6 +5,8 @@ import { createWorkspaceState } from '../../frontend/assets/workspace/state.js';
 import { installCollections } from '../../frontend/assets/workspace/collections.js';
 import { installUpload } from '../../frontend/assets/workspace/upload.js';
 import { installCamera } from '../../frontend/assets/workspace/camera.js';
+import { installReview } from '../../frontend/assets/workspace/review.js';
+import { confidenceBar } from '../../frontend/assets/workspace/components.js';
 
 // Workspace.
 function workspace(service = {}) {
@@ -43,6 +45,81 @@ test('new uploads select their results and late snapshots preserve selection', a
     assert.equal(state.batchId, null);
     assert.equal(state.selectedId, null);
     assert.equal(state.cache.size, 0);
+  });
+
+test('collection review preserves the scan selection and closing discards a late display', async () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = { activeElement: {} };
+    let resolveImage;
+    let focusRestored = false;
+    const dialog = { open: false, addEventListener() {}, showModal() { this.open = true; }, close() { this.open = false; } };
+    const content = { innerHTML: '', contains: () => false, querySelectorAll: () => [] };
+    try {
+      const context = workspace({ image: () => new Promise(resolve => { resolveImage = resolve; }) });
+      context.$ = id => id === 'result-dialog' ? dialog : content;
+      context.state.batchId = 'batch';
+      context.state.selectedId = 'scan-photo';
+      installReview(context);
+      const pending = context.actions.openReview('review-photo', { isConnected: true, focus() { focusRestored = true; } });
+      assert.equal(dialog.open, true);
+      assert.equal(context.state.selectedId, 'scan-photo');
+      assert.match(content.innerHTML, /Loading your results/);
+      context.actions.closeReview();
+      resolveImage({ image_id: 'review-photo', jobs: {}, original_filename: 'Review photo' });
+      await pending;
+      assert.equal(dialog.open, false);
+      assert.equal(context.state.reviewId, null);
+      assert.equal(context.state.selectedId, 'scan-photo');
+      assert.equal(focusRestored, true);
+      assert.doesNotMatch(content.innerHTML, /Review photo/);
+    } finally { globalThis.document = previousDocument; }
+  });
+
+test('review failures stay in the dialog with a retry control', async () => {
+    const previousDocument = globalThis.document;
+    globalThis.document = { activeElement: {} };
+    const dialog = { open: false, addEventListener() {}, showModal() { this.open = true; } };
+    const content = { innerHTML: '', contains: () => false, querySelectorAll: () => [] };
+    try {
+      const context = workspace({ image: async () => { throw new Error('Photo unavailable'); } });
+      context.$ = id => id === 'result-dialog' ? dialog : content;
+      installReview(context);
+      await context.actions.openReview('missing');
+      assert.equal(dialog.open, true);
+      assert.match(content.innerHTML, /Photo unavailable/);
+      assert.match(content.innerHTML, /data-action="retry-review"/);
+      assert.equal(context.state.reviewLoading, false);
+    } finally { globalThis.document = previousDocument; }
+  });
+
+test('confidence bars keep zero scores and omit unavailable or invalid measurements', () => {
+    assert.match(confidenceBar(0, 'Apple'), /value="0"/);
+    assert.match(confidenceBar(.73, 'Apple'), /value="0.73"/);
+    for (const score of [null, undefined, NaN, Infinity, -.1, 1.1, '0.5']) assert.equal(confidenceBar(score, 'Apple'), '');
+  });
+
+test('a camera capture completing after stop does not add a stale photo', async () => {
+    const previousDocument = globalThis.document;
+    let resolveBlob;
+    let added = 0;
+    globalThis.document = { hidden: false, createElement: () => ({
+        getContext: () => ({ drawImage() {} }), toBlob(resolve) { resolveBlob = resolve; },
+      }) };
+    try {
+      const context = workspace();
+      const video = { videoWidth: 640, videoHeight: 480 };
+      Object.assign(context, { $: id => id === 'camera-video' ? video : null, intake: { querySelector: () => ({}) }, limits: {}, maxPixels: 24000000 });
+      context.state.cameraStream = { getTracks: () => [{ stop() {} }] };
+      context.actions.addFiles = () => { added++; };
+      installCamera(context);
+      const pending = context.actions.capture();
+      assert.equal(context.state.captureBusy, true);
+      context.actions.stopCamera(false);
+      resolveBlob(new Blob(['photo']));
+      await pending;
+      assert.equal(added, 0);
+      assert.equal(context.state.captureBusy, false);
+    } finally { globalThis.document = previousDocument; }
   });
 
 test('a result from a previous collection is discarded', async () => {

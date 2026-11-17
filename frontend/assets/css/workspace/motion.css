@@ -1,0 +1,52 @@
+/* Add gentle ambient movement, tactile controls, and the Fruispect robot experience. */
+button, a, summary, .card, .fo-card, .drop-zone, .badge { transition: background-color .18s, border-color .18s, box-shadow .18s, transform .18s, color .18s; }
+button:active:not(:disabled) { transform: scale(.97); }
+@media (hover: hover) {
+  .button:hover:not(:disabled), .icon-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 12px #244b2712; }
+  .batch-choice:hover { transform: translateX(2px); }
+  .card:hover { border-color: #c5d8c1; }
+}
+.hero-art { animation: orchard-drift 18s ease-in-out infinite alternate; }
+.hero-frame { animation: frame-glow 5s ease-in-out infinite; }
+.idle-scan { display: grid; place-items: center; width: 70px; height: 70px; color: #4b835d; border: 1px solid #dce8d4; background: #edf5e8; border-radius: 22px; margin-bottom: 10px; animation: robot-float 5s ease-in-out infinite; }
+.is-scanning .inspection-thumb::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent 42%,#b0f4b135 49%,#a4f7acaa 50%,transparent 52%); animation: scan-sweep 2.6s ease-in-out infinite; pointer-events: none; }
+.badge.active i { animation: status-glow 2.4s ease-in-out infinite; }
+.fo-badge--work i, .fo-host-kicker .fo-is-ready { animation: status-glow 3s ease-in-out infinite; }
+dialog[open] { animation: dialog-arrive .25s cubic-bezier(.2,.7,.2,1); }
+dialog[open]::backdrop { animation: backdrop-arrive .25s ease-out; }
+.welcome-screen { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px; text-align: center; padding: 28px; background: radial-gradient(ellipse at 50% 40%,#edf6e4,#f8faf5 68%); }
+.welcome-screen h1 { font-size: clamp(27px,4vw,48px); font-weight: 780; letter-spacing: -.055em; }
+.welcome-screen h1 span { color: #68a174; }
+.welcome-screen p { max-width: 360px; min-height: 46px; color: var(--muted); font-size: 14px; }
+.welcome-screen small { color: var(--muted); font-size: 11px; }
+.welcome-screen.is-leaving { animation: welcome-depart .26s ease-in forwards; }
+.welcome-screen progress { appearance: none; width: min(260px,80vw); height: 5px; border: 0; border-radius: 10px; overflow: hidden; background: #dce9d5; accent-color: #42825b; }
+.welcome-screen progress::-webkit-progress-bar { background: #dce9d5; }
+.welcome-screen progress::-webkit-progress-value { background: #42825b; border-radius: 10px; transition: width .18s; }
+.welcome-screen progress::-moz-progress-bar { background: #42825b; }
+.welcome-orbit { position: relative; width: 220px; height: 220px; display: grid; place-items: center; margin-bottom: 12px; }
+.welcome-orbit img { position: relative; width: 180px; height: 180px; object-fit: contain; animation: robot-float 3.4s ease-in-out infinite; filter: drop-shadow(0 16px 12px #305d3820); }
+.welcome-orbit > span { position: absolute; inset: 0; border: 1px dashed #bfd6b7; border-radius: 50%; animation: spin 40s linear infinite; }
+.welcome-orbit::after { content: ''; position: absolute; width: 80px; height: 12px; bottom: 7px; border-radius: 50%; background: #395f3020; filter: blur(5px); animation: shadow-breathe 3.4s ease-in-out infinite; }
+.robot-companion { position: fixed; bottom: max(18px,env(safe-area-inset-bottom)); right: max(18px,env(safe-area-inset-right)); z-index: 7; display: flex; flex-direction: column; align-items: flex-end; gap: 10px; pointer-events: none; }
+.robot-button { position: relative; border: 0; padding: 0; background: transparent; width: 80px; height: 88px; pointer-events: auto; border-radius: 25px; }
+.robot-button img { width: 80px; height: 80px; object-fit: contain; animation: robot-float 4.5s ease-in-out infinite; filter: drop-shadow(0 8px 6px #274b302e); }
+.robot-greeting { position: absolute; right: 73px; top: 26px; width: max-content; border: 1px solid var(--line); background: #fff; border-radius: 20px; padding: 6px 11px; color: var(--muted); font-size: 10px; opacity: 0; transform: translateX(4px); transition: opacity .2s,transform .2s; }
+.robot-button:hover .robot-greeting, .robot-button:focus-visible .robot-greeting { opacity: 1; transform: none; }
+.robot-button[aria-expanded=true] .robot-greeting { display: none; }
+.robot-speech { pointer-events: auto; width: min(290px,calc(100vw - 32px)); padding: 14px; border: 1px solid #d7e5d1; border-radius: 16px 16px 4px 16px; background: #fff; box-shadow: 0 9px 35px #21412c24; animation: dialog-arrive .22s ease-out; }
+.robot-speech-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.robot-speech-head strong { font-size: 12px; }
+.robot-speech-head .icon-button { width: 30px; min-height: 30px; border: 0; }
+.robot-speech p { font-size: 13px; color: var(--muted); margin: 10px 0 8px; }
+.toast { bottom: 112px; }
+.page-footer { padding-bottom: 110px; }
+@keyframes robot-float { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-9px) rotate(1deg); } }
+@keyframes shadow-breathe { 50% { transform: scale(.8); opacity: .6; } }
+@keyframes orchard-drift { to { transform: scale(1.045) translateX(-3px); } }
+@keyframes frame-glow { 50% { opacity: .55; } }
+@keyframes status-glow { 50% { opacity: .3; } }
+@keyframes scan-sweep { 0%,100% { transform: translateY(-45%); } 50% { transform: translateY(45%); } }
+@keyframes dialog-arrive { from { opacity: 0; transform: translateY(18px) scale(.99); } to { opacity: 1; transform: none; } }
+@keyframes backdrop-arrive { from { opacity: 0; } to { opacity: 1; } }
+@keyframes welcome-depart { to { opacity: 0; transform: translateY(-12px); } }

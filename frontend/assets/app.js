@@ -4,6 +4,8 @@ import { readConfig } from './api/config.js';
 import { mountOperator } from './operator/index.js';
 import { createWorkspace } from './workspace/index.js';
 import { escapeHtml as e, icon } from './ui.js';
+import { mountExperience, animatePage } from './experience.js';
+import { openDialog } from './motion.js';
 
 const config = readConfig();
 
@@ -71,9 +73,9 @@ app.innerHTML = `<div class="shell">
 <div id="toast" role="status" aria-live="polite" hidden></div>
 <dialog id="confirm-dialog" aria-labelledby="confirm-title" aria-describedby="confirm-body">
   <form method="dialog">
-    <h2 id="confirm-title"></h2><p id="confirm-body"></p>
-    <label id="confirm-input-label" hidden><span></span><input id="confirm-input" autocomplete="off"></label>
-    <div class="dialog-actions"><button class="button" value="cancel" autofocus>Go back</button>
+    <h2 id="confirm-title" data-reveal></h2><p id="confirm-body" data-reveal></p>
+    <label id="confirm-input-label" data-reveal hidden><span></span><input id="confirm-input" autocomplete="off"></label>
+    <div class="dialog-actions" data-reveal><button class="button" value="cancel" autofocus>Go back</button>
     <button class="button danger" id="confirm-apply" value="apply"></button></div>
   </form>
 </dialog>`;
@@ -87,6 +89,7 @@ const dialog = document.querySelector('#confirm-dialog');
 const confirmInput = document.querySelector('#confirm-input');
 const confirmLabel = document.querySelector('#confirm-input-label');
 const applyButton = document.querySelector('#confirm-apply');
+const experience = mountExperience(app);
 
 // Display a temporary application status or error message.
 function notify(message, tone = 'info') {
@@ -110,7 +113,7 @@ function confirmAction({ title, body, label = 'Confirm', requireText = '' }) {
   applyButton.disabled = Boolean(requireText);
   confirmInput.oninput = () => { applyButton.disabled = confirmInput.value !== requireText; };
   dialog.returnValue = 'cancel';
-  dialog.showModal();
+  openDialog(dialog);
   return new Promise(resolve => dialog.addEventListener('close', () => {
         resolve(dialog.returnValue === 'apply' && (!requireText || confirmInput.value === requireText));
       }, { once: true }));
@@ -160,6 +163,7 @@ function showPairing(message = '') {
 // Switch workspace views and maintain navigation and operator lifecycle.
 function showPage(next, { focus = true, write = true } = {}) {
   if (!Object.hasOwn(pages, next)) next = 'scan';
+  const changed = page !== next;
   if (next !== page && page === 'operator') {
     disposeOperator?.();
     disposeOperator = null;
@@ -188,6 +192,10 @@ function showPage(next, { focus = true, write = true } = {}) {
       operatorRoot.innerHTML = `<div class="empty"><h1>Operator console</h1><p>${needsPairing ? 'Pair this browser to continue.' : 'Waiting for the host connection.'}</p></div>`;
     }
   }
+  if (changed) {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    animatePage(next === 'operator' ? operatorRoot : userRoot.querySelector(next === 'collections' ? '#collections-screen' : '#scan-screen'));
+  }
   sidebar.classList.remove('mobile-open');
   menuButton.setAttribute('aria-expanded', 'false');
   if (focus) document.querySelector('#main').focus({ preventScroll: true });
@@ -201,7 +209,7 @@ async function initialize(code = null, pairedNow = false) {
     if (requestId !== connectionSequence) return;
     if (code) {
       try { await service.connect(code); }
-      catch (error) { showPairing(error.message); showPage(page, { focus: false, write: false }); return; }
+      catch (error) { showPairing(error.message); showPage(page, { focus: false, write: false }); experience.ready(); return; }
       return initialize(null, true);
     }
     if (!pairedNow && (connection.requires_pairing && connection.paired !== true)) {
@@ -222,6 +230,7 @@ async function initialize(code = null, pairedNow = false) {
     }
   }
   showPage(page, { focus: false, write: false });
+  experience.ready();
 }
 
 workspace = createWorkspace(userRoot, {

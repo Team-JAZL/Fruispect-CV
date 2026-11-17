@@ -63,5 +63,5 @@ img { max-width: 100%; display: block; }
 .badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
 select, input:not([type=checkbox]):not([type=file]) { min-height: 36px; max-width: 100%; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); padding: 6px 9px; }
 select { cursor: pointer; }
-.main-content { width: 100%; max-width: 1550px; margin: 0 auto; padding: 25px clamp(18px,3vw,44px) 30px; flex: 1; }
+.main-content { width: 100%; max-width: 1550px; margin: 0 auto; padding: 18px clamp(18px,3vw,44px) 24px; flex: 1; }
 #connection-panel:not(:empty) { margin-bottom: 14px; }

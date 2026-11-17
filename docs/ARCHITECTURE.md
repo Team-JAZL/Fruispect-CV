@@ -78,7 +78,7 @@ Errors: `{"error":{"code":"...","message":"..."}}`. Per-file errors appear in th
 | GET `/api/readiness` | Storage + all workers; 503 until ready |
 | GET `/api/models`, `/api/queues` | Lane registry, health, active/upcoming jobs, rolling stats |
 | POST `/api/batches` | 202 `{batch}`; optional Idempotency-Key |
-| GET `/api/batches` | Latest 30 session batches |
+| GET `/api/batches` | All retained session batches, newest first |
 | POST `/api/batches/:id/images` | Multipart `images`, 1–4/chunk; required key; optional offset |
 | GET `/api/batches/:id` | Summary + cursor |
 | GET `/api/batches/:id/images` | Page/limit/total; default 20, max 50 |

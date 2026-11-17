@@ -5,6 +5,7 @@ import { imageDetail } from './image.js';
 import { batchList, eventTimeline, requestDetails, requestPhotos, requestsView } from './request-view.js';
 import { researchView } from './research.js';
 import { settingsView } from './settings.js';
+import { animatePage, hasEntrance } from '../motion.js';
 
 // Connect render behavior to shared state and actions.
 export function installRender(context) {
@@ -22,6 +23,7 @@ export function installRender(context) {
     const scrollables = '.fo-table-wrap, .fo-selection-list';
     const scroll = Array.from(element.querySelectorAll(scrollables), (wrapper) => [wrapper.scrollLeft, wrapper.scrollTop]);
     element.innerHTML = markup;
+    if (element === outlet && hasEntrance(outlet)) animatePage(outlet);
     store.renderedHTML.set(element, markup);
     for (const details of element.querySelectorAll('details[data-disclosure]')) details.open = open.has(details.dataset.disclosure);
     element.querySelectorAll(scrollables).forEach((wrapper, index) => {
@@ -48,11 +50,18 @@ export function installRender(context) {
     const local = actions.canOperate();
     actions.paint(access, (badge(local ? 'READY' : '', local ? 'Local operator' : 'Browser session')));
     for (const button of tabs) {
+      const selected = button.dataset.id === store.tab;
+      button.setAttribute('aria-selected', String(selected));
+      button.tabIndex = selected ? 0 : -1;
       if (button.dataset.id === store.tab) button.setAttribute('aria-current', 'page');
       else button.removeAttribute('aria-current');
     }
-    const viewKey = store.tab === 'requests' ? store.tab : store.tab;
+    outlet.setAttribute('aria-labelledby', `operator-tab-${store.tab}`);
+    const initial = !store.renderedView;
+    const viewKey = store.tab;
     const changed = store.renderedView !== viewKey;
+    const requestChanged = store.tab === 'requests' && store.renderedRequest !== store.request;
+    const imageChanged = store.tab === 'requests' && store.renderedImageId !== store.request?.imageId;
     store.renderedView = viewKey;
     if (store.tab === 'overview') {
       actions.paint(outlet, overview({ queues: store.queues, readiness: store.readiness, health: store.health, connection: local ? store.host.data : null, updated: store.updated }));
@@ -72,6 +81,9 @@ export function installRender(context) {
       actions.paint(outlet.querySelector('[data-slot="image"]'), imageDetail(store.request.image, store.busy));
       actions.paint(outlet.querySelector('[data-slot="timeline"]'), eventTimeline(store.request));
     }
+    if (!initial && (changed || requestChanged)) animatePage(outlet);
+    else if (imageChanged) animatePage(outlet.querySelector('[data-slot="image"]'));
+    store.renderedImageId = store.request?.imageId;
   }
 
   // Coalesce operator panel updates into a single queued render.

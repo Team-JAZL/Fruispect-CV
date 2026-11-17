@@ -1,5 +1,9 @@
 // Render shared operator controls, status notices, and metric fields.
-import { STATUS_LABELS, html, number, display, words, upper, errorText } from './format.js';
+import { STATUS_LABELS, TAB_ICONS, html, number, display, words, upper, errorText } from './format.js';
+import { icon } from '../ui.js';
+
+const ACTION_ICONS = { refresh: 'refresh', copy: 'copy', retry: 'refresh', export: 'download', 'cancel-image': 'close', 'cancel-batch': 'close', 'delete-batch': 'trash', 'delete-collections': 'trash', reset: 'refresh', 'queue-photo': 'eye' };
+const ICON_ACTIONS = new Set(['refresh', 'copy', 'retry', 'cancel-image', 'cancel-batch', 'delete-batch', 'page']);
 
 // Render a labeled status badge with its matching visual tone.
 export function badge(value, label) {
@@ -13,8 +17,9 @@ export function badge(value, label) {
 
 // Render an operator action button with optional identity and disabled state.
 export function btn(label, action, options = {}) {
-  const { id, variant = '', disabled = false } = options;
-  return `<button type="button" class="fo-btn${variant ? ' fo-btn--' + variant : ''}" data-action="${html(action)}"${id == null ? '' : ` data-id="${html(id)}"`}${disabled ? ' disabled' : ''}>${html(label)}</button>`;
+  const { id, variant = '', disabled = false, shortLabel = label, iconOnly = ICON_ACTIONS.has(action) } = options;
+  const glyph = options.icon ?? (action === 'tab' ? TAB_ICONS[id] : action === 'page' ? Number(id) < 0 ? 'back' : 'chevron' : ACTION_ICONS[action]);
+  return `<button type="button" class="fo-btn${variant ? ' fo-btn--' + variant : ''}${glyph && iconOnly ? ' fo-btn--icon' : ''}" data-action="${html(action)}"${id == null ? '' : ` data-id="${html(id)}"`} aria-label="${html(label)}" title="${html(label)}"${disabled ? ' disabled' : ''}>${glyph ? icon(glyph, 17) : ''}<span${glyph && iconOnly ? ' class="sr-only"' : ''}>${html(shortLabel)}</span></button>`;
 }
 
 // Render an accessible empty state with an optional next action.
@@ -38,7 +43,7 @@ export function stateNotice(resource, label, hasData = resource.data != null) {
 
 // Render a section title, description, and optional action.
 export function sectionHead(title, subtitle, action = '') {
-  return `<div class="fo-section-head"><div><h2>${html(title)}</h2>${subtitle ? `<p>${html(subtitle)}</p>` : ''}</div>${action}</div>`;
+  return `<div class="fo-section-head" data-reveal><div><h2>${html(title)}</h2>${subtitle ? `<p>${html(subtitle)}</p>` : ''}</div>${action}</div>`;
 }
 
 // Render labeled values as an accessible definition list.

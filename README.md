@@ -22,11 +22,13 @@ Stop with **Ctrl+C**, or run `.venv/Scripts/python.exe -m scripts.stop` from ano
 ## Using Fruispect
 
 1. Choose Photo, Batch, or Camera, review your inputs, then select **Check fruit**.
-2. Compare each model's results as they arrive. Selecting another photo preserves that selection while earlier jobs finish.
-3. Open **Collections** to filter, cancel, export, or delete this browser's scans.
+2. See each model's fruit, visual quality, and confidence directly in **Current check** as results arrive.
+3. Open **Collections** to review photos in a result dialog with per-class confidence bars, or filter, cancel, export, and delete scans. Reviewing a photo keeps you in Collections and preserves the current scan selection.
 4. Open **Operator console** for readiness, FIFO queues, owned request details, research, connection settings, and localhost reset controls.
 
 Collections belong to browser sessions and are normally retained for 24 hours. Clearing cookies removes access to that session's history. Export anything needed before deleting or resetting scans.
+
+All retained collections are available without a count cap. Camera mode opens a large preview with a shutter button; on phones it fills the screen. A brief robot welcome, gentle page transitions, and a tappable helper accompany the workspace. Reduced-motion preferences are respected, and presentation animations never delay model inference.
 
 For a phone camera, install and configure ngrok, then use the pairing link shown by the desktop application. Set `$env:FRUISPECT_NGROK = '0'` before launch for local-only operation. See [configuration and phone access](docs/CONFIGURATION.md).
 

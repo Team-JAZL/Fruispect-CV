@@ -17,10 +17,10 @@ export function settingsView({ settings, host, local, busy, cleanupMessage }) {
     retry: 'Requesting retry…', reset: 'Resetting…', 'delete-collections': 'Deleting…',
   }[busy];
   return `<div class="fo-stack">
-    ${sectionHead('Settings', 'Manage phone access and retained scan data.', btn('Refresh settings', 'refresh'))}
+    ${sectionHead('Settings', 'Phone access & saved scans.')}
     ${cleanupMessage ? notice(cleanupMessage, 'good') : ''}
     ${stateNotice(host, 'connection status')}${stateNotice(settings, 'data totals')}
-    <section class="fo-card fo-settings-card">
+    <section data-reveal class="fo-card fo-settings-card">
       ${sectionHead('Phone connection', value?.message ?? 'Phone access uses the host’s optional HTTPS link.', badge(status))}
       ${host.loading && !value ? '<p class="fo-muted">Checking connection status…</p>' : ''}
       ${value?.error_code ? notice('Connection code: ' + value.error_code, 'warn') : ''}
@@ -35,15 +35,15 @@ export function settingsView({ settings, host, local, busy, cleanupMessage }) {
       ${!local ? '<p class="fo-card-note">Pairing credentials and connection retry require direct localhost access.</p>' : ''}
     </section>
     <div class="fo-settings-grid">
-      <section class="fo-card fo-settings-card">
-        ${sectionHead('This browser', 'Delete collections owned by the current browser session.')}
+      <section data-reveal class="fo-card fo-settings-card">
+        ${sectionHead('This browser', 'Your saved scans on this device.')}
         <div class="fo-settings-metrics">${metric('Collections', count(stats?.collections))}${metric('Photos', count(stats?.photos))}</div>
-        ${btn(busy === 'delete-collections' ? busyLabel : 'Delete browser collections', 'delete-collections', { variant: 'danger', disabled: Boolean(busy) || !canDelete })}
+        ${btn(busy === 'delete-collections' ? busyLabel : 'Delete browser collections', 'delete-collections', { variant: 'danger', disabled: Boolean(busy) || !canDelete, shortLabel: 'Delete scans' })}
       </section>
-      <section class="fo-card fo-settings-card fo-settings-danger">
-        ${sectionHead('Global scan reset', 'Clear scan data from every browser. Research, models, and connection configuration are preserved.', badge('', ('Localhost only')))}
+      <section data-reveal class="fo-card fo-settings-card fo-settings-danger">
+        ${sectionHead('Reset all scans', 'Remove scans from every browser. Models and research are kept.', badge('', ('Localhost only')))}
         ${local ? `<div class="fo-settings-metrics">${metric('All collections', count(stats?.all_collections))}${metric('All photos', count(stats?.all_photos))}</div>
-        ${btn(busy === 'reset' ? busyLabel : 'Reset all scan data', 'reset', { variant: 'danger', disabled: Boolean(busy) })}` : '<p class="fo-card-note">Open Fruispect directly on the host to use this control.</p>'}
+        ${btn(busy === 'reset' ? busyLabel : 'Reset all scan data', 'reset', { variant: 'danger', disabled: Boolean(busy), shortLabel: 'Reset all scans' })}` : '<p class="fo-card-note">Open Fruispect directly on the host to use this control.</p>'}
       </section>
     </div>
   </div>`;
